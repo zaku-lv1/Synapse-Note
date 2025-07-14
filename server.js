@@ -67,6 +67,7 @@ app.use(session({
 const indexRoutes = require('./routes/index');
 const authRoutes = require('./routes/auth');
 const quizRoutes = require('./routes/quizzes');
+const profileRoutes = require('./routes/profile');
 
 // ★★★ ここからが修正点 ★★★
 
@@ -90,6 +91,7 @@ app.get('/', (req, res) => {
 app.use('/quiz', quizRoutes); // クイズ関連 (/quiz/create-quiz など)
 app.use('/', authRoutes);      // 認証関連 (/login, /register, /logout)
 app.use('/', indexRoutes);     // その他 (/dashboard, /my-history など)
+app.use('/profile', profileRoutes); // プロフィール関連 (/profile/edit, /profile/view など)
 
 // ★★★ ここまでが修正点 ★★★
 

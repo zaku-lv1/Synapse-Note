@@ -29,11 +29,10 @@
             <!-- ★★★ nav要素に 'main-nav' クラスを追加 ★★★ -->
             <nav class="main-nav">
                 <% if (typeof user !== 'undefined' && user) { %>
+                    <span><a href="/dashboard"><%= user.username %></a></span>
                     <a href="/public-quizzes">公開テスト</a>
                     <a href="/quiz/my-quizzes">作成一覧</a>
                     <a href="/my-history">挑戦履歴</a>
-                    <a href="/profile">プロフィール</a>
-                    <span><a href="/dashboard"><%= user.username %></a></span>
                     <a href="/logout">ログアウト</a>
                 <% } else { %>
                     <a href="/public-quizzes">公開テスト</a>
