@@ -1,4 +1,4 @@
-/* === Synapse Note: Pure White Theme, Clean UI (Version 7.0) === */
+/* === Synapse Note: Pure White Theme, Clean UI (Version 7.0) | Refactored === */
 
 /* -----------------------------------------------------------------
    1. Global Settings & Font Imports
@@ -105,7 +105,7 @@ footer {
 /* -----------------------------------------------------------------
    4. Buttons (Primary/Secondary/Danger)
 ------------------------------------------------------------------- */
-.button, .button-secondary, .button-danger, .btn, .btn-primary, .btn-secondary {
+.button, .btn, .button-secondary, .button-danger, .btn-primary, .btn-secondary {
   display: inline-block;
   border-radius: var(--border-radius);
   font-size: 1rem;
@@ -144,10 +144,7 @@ footer {
   background-color: var(--danger-hover-color);
   border-color: var(--danger-hover-color);
 }
-.button:active,
-.button-secondary:active,
-.button-danger:active,
-.btn:active {
+.button:active, .button-secondary:active, .button-danger:active, .btn:active {
   transform: scale(0.98);
 }
 
@@ -198,9 +195,7 @@ footer {
   flex-direction: column;
   width: 100%;
 }
-.auth-container .form-group {
-  margin-bottom: 1.3rem;
-}
+.auth-container .form-group { margin-bottom: 1.3rem; }
 .auth-container label {
   display: block;
   font-weight: 600;
@@ -246,6 +241,30 @@ footer {
   margin-bottom: 18px;
   text-align: center;
   font-weight: 500;
+}
+.auth-container button[type="submit"] {
+  display: inline-block;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: all 0.18s;
+  border: 2px solid transparent;
+  padding: 12px 22px;
+  background-color: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+}
+
+.auth-container button[type="submit"]:hover {
+  background-color: var(--primary-hover-color);
+  border-color: var(--primary-hover-color);
+}
+
+.auth-container button[type="submit"]:active {
+  transform: scale(0.98);
 }
 
 /* -----------------------------------------------------------------
@@ -296,10 +315,7 @@ footer {
   align-items: center;
   justify-content: center;
 }
-.card-icon svg {
-  width: 26px;
-  height: 26px;
-}
+.card-icon svg { width: 26px; height: 26px; }
 .card-content h3 {
   font-size: 1.14rem;
   font-weight: 600;
@@ -398,12 +414,6 @@ footer {
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
 }
-.form-container .page-title {
-  text-align: center;
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 0.8rem;
-}
 .form-container .form-description {
   text-align: center;
   color: var(--muted-text-color);
@@ -470,6 +480,7 @@ footer {
 .form-actions-split { display: flex; justify-content: space-between; align-items: center; }
 .form-divider { border: none; border-top: 1px solid var(--border-color); margin: 1rem 0; }
 
+
 /* -----------------------------------------------------------------
    10. Solve Quiz Page (UI Enhancement)
 ------------------------------------------------------------------- */
@@ -478,6 +489,7 @@ footer {
   text-align: center;
   font-size: 1.65rem;
   margin-bottom: 1.4rem;
+  font-weight: 700; /* Added from section 9 */
 }
 .question-list {
   display: flex;
@@ -505,7 +517,6 @@ footer {
   line-height: 1.7;
   margin-bottom: 1.5rem;
 }
-/* Multiple Choice Option Styling */
 .options-group {
   display: flex;
   flex-direction: column;
@@ -546,8 +557,6 @@ footer {
   font-weight: 600;
   box-shadow: 0 0 0 2.5px rgba(49,120,215,0.08);
 }
-
-/* Short/Descriptive Answer Styling */
 .answer-input-group input[type="text"],
 .answer-input-group textarea {
   width: 100%;
@@ -601,6 +610,7 @@ footer {
 }
 .result-card.correct, .result-item.correct { border-left-color: var(--correct-color); }
 .result-card.incorrect, .result-item.incorrect { border-left-color: var(--danger-color); }
+
 .result-card .question-title, .result-item-header {
   display: flex;
   justify-content: space-between;
@@ -649,30 +659,9 @@ footer {
   justify-content: center;
   gap: 1rem;
 }
-/* Image Preview */
-.image-preview-wrapper {
-  width: 100%;
-  max-width: 350px;
-  margin: 1.1em auto 0 auto;
-  text-align: center;
-  display: flex;
-  justify-content: center;
-}
-.image-preview {
-  display: block;
-  max-width: 100%;
-  max-height: 240px;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px #0002;
-  object-fit: contain;
-  background: #fff;
-  margin: 0 auto;
-  border: 1px solid #e1e3e8;
-  transition: box-shadow 0.15s, border 0.15s;
-}
 
 /* -----------------------------------------------------------------
-   12. Utilities (Empty State)
+   12. Utilities & Image Previews
 ------------------------------------------------------------------- */
 .no-content-message {
   text-align: center;
@@ -682,6 +671,37 @@ footer {
   border-radius: var(--border-radius);
 }
 .no-content-message p { margin-bottom: 1.2rem; color: var(--muted-text-color); }
+
+.image-preview-wrapper {
+  width: 100%;
+  max-width: 360px; /* Consolidated from 350px and 360px */
+  margin: 1.2em auto 0 auto;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+}
+.image-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 240px;
+  width: auto !important; /* Added for consistency */
+  height: auto !important; /* Added for consistency */
+  border-radius: 8px;
+  box-shadow: 0 1px 4px #0002;
+  object-fit: contain;
+  background: #fff;
+  margin: 0 auto;
+  border: 1px solid #e1e3e8;
+  transition: box-shadow 0.15s, border 0.15s;
+}
+.image-preview[style*="display: block"] {
+  animation: fadeInImg 0.32s ease;
+}
+@keyframes fadeInImg {
+  from { opacity: 0; transform: scale(0.97);}
+  to   { opacity: 1; transform: scale(1);}
+}
+
 
 /* -----------------------------------------------------------------
    13. Custom File Input for Image Upload
@@ -740,7 +760,7 @@ footer {
 }
 
 /* -----------------------------------------------------------------
-   14. Header Logo & Hamburger Menu (Responsive)
+   14. Header Logo & Hamburger Menu
 ------------------------------------------------------------------- */
 .site-logo {
   margin: 0;
@@ -784,50 +804,8 @@ footer {
   transform: rotate(-90deg);
 }
 
-/* Responsive Navigation Menu for Mobile */
-@media (max-width: 768px) {
-  .header-container .main-nav {
-    flex-direction: column;
-    gap: 2rem;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: #fff;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-10px);
-    transition: opacity 0.26s, visibility 0.26s, transform 0.26s;
-  }
-  .header-container .main-nav a {
-    font-size: 1.4rem;
-    color: var(--text-color);
-  }
-  .header-container .main-nav span a {
-    font-weight: bold;
-    color: var(--primary-color);
-  }
-  .hamburger-menu { display: block; }
-  header.mobile-menu-open .main-nav {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-  }
-  header.mobile-menu-open .hamburger-menu .icon-hamburger {
-    opacity: 0;
-    transform: rotate(90deg);
-  }
-  header.mobile-menu-open .hamburger-menu .icon-close {
-    opacity: 1;
-    transform: rotate(0deg);
-    color: var(--text-color);
-  }
-}
-
 /* -----------------------------------------------------------------
-   15. Manual Quiz Creation Page (manual-create.ejs)
+   15. Manual Quiz Creation Page
 ------------------------------------------------------------------- */
 #questionsArea { margin-bottom: 2rem; }
 .question-editor-card {
@@ -884,16 +862,10 @@ footer {
   margin-right: 4px;
   margin-bottom: 6px;
 }
-.mc-btn,
-.remove-option-btn,
-.add-option-btn,
-.delete-question-btn {
-  font-size: 0.97rem;
+.mc-btn, .remove-option-btn, .add-option-btn, .delete-question-btn {
   font-weight: 500;
   border: none;
   border-radius: 5px;
-  padding: 6px 12px;
-  margin-left: 7px;
   cursor: pointer;
   transition: background 0.14s, color 0.14s, box-shadow 0.14s;
   box-shadow: 0 1px 4px #0001;
@@ -904,6 +876,9 @@ footer {
 .remove-option-btn, .mc-btn-remove {
   background: #fff1f1;
   color: #d93025;
+  font-size: 0.97rem;
+  padding: 6px 12px;
+  margin-left: 7px;
 }
 .remove-option-btn:hover, .mc-btn-remove:hover {
   background: #ffe5e5;
@@ -912,6 +887,9 @@ footer {
 .add-option-btn, .mc-btn-add {
   background: #f0f7ff;
   color: #357abd;
+  font-size: 0.97rem;
+  padding: 6px 12px;
+  margin-left: 7px;
 }
 .add-option-btn:hover, .mc-btn-add:hover {
   background: #e3f1ff;
@@ -965,13 +943,15 @@ footer {
 }
 
 /* -----------------------------------------------------------------
-   16. プロフィールページ/編集ページ
+   16. Profile & Profile Edit Pages
 ------------------------------------------------------------------- */
 .profile-container, .profile-edit-container {
-  max-width: 800px;
   margin: 2rem auto;
   padding: 0 1rem;
 }
+.profile-container { max-width: 800px; }
+.profile-edit-container { max-width: 600px; }
+
 .profile-header {
   display: flex;
   align-items: center;
@@ -1042,7 +1022,6 @@ footer {
   color: var(--muted-text-color);
   font-weight: 500;
 }
-.profile-edit-container { max-width: 600px; }
 .form-header {
   display: flex;
   justify-content: space-between;
@@ -1061,8 +1040,8 @@ footer {
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(49,120,215,0.05);
 }
-.form-group { margin-bottom: 1.1rem; }
-.form-group label {
+.profile-form .form-group { margin-bottom: 1.1rem; } /* Simplified from original */
+.profile-form label {
   display: block;
   margin-bottom: 0.5rem;
   color: var(--text-color);
@@ -1070,7 +1049,7 @@ footer {
   font-size: 0.94rem;
 }
 .required { color: #e23d28; }
-.form-group input, .form-group textarea {
+.profile-form input, .profile-form textarea { /* Simplified from original */
   width: 100%;
   padding: 0.7rem;
   border: 2px solid var(--border-color);
@@ -1080,12 +1059,12 @@ footer {
   transition: border-color 0.14s;
   box-sizing: border-box;
 }
-.form-group input:focus, .form-group textarea:focus {
+.profile-form input:focus, .profile-form textarea:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 2.5px rgba(49,120,215,0.07);
 }
-.form-group input:disabled {
+.profile-form input:disabled {
   background-color: #fafbfc;
   color: #b6bbc8;
   cursor: not-allowed;
@@ -1102,9 +1081,8 @@ footer {
   color: #a0aec0;
   margin-top: 0.18rem;
 }
-.form-actions { display: flex; gap: 1rem; margin-top: 1.4rem; }
+.profile-form .form-actions { margin-top: 1.4rem; } /* Simplified from original */
 
-/* Alert styles */
 .alert {
   padding: 1rem;
   border-radius: 8px;
@@ -1123,79 +1101,83 @@ footer {
 }
 
 /* -----------------------------------------------------------------
-   17. Responsive Design & Image Preview
+   17. Responsive Design
 ------------------------------------------------------------------- */
 @media (max-width: 900px) {
   .image-preview-wrapper { max-width: 90vw; }
-  .image-preview { max-width: 90vw; max-height: 36vw; }
+  .image-preview { max-height: 36vw; }
 }
+
 @media (max-width: 768px) {
   body { font-size: 15px; }
   main { padding: 1rem; }
   header { padding: 0.75rem 1rem; }
-  .auth-container, .form-container { padding: 1.2rem; }
+  .auth-container, .form-container, .profile-form { padding: 1.2rem; }
+  
   .quiz-list-item, .history-list-item { flex-direction: column; align-items: flex-start; }
   .quiz-actions, .history-score { width: 100%; margin-top: 1rem; }
+  
+  .form-actions { flex-direction: column; }
   .form-actions-split { flex-direction: column; gap: 0.7rem; align-items: stretch; }
   .form-actions-split .button-danger { order: 2; }
   .form-actions-split .main-actions { order: 1; width: 100%; }
+  
   .profile-container, .profile-edit-container { margin: 1rem auto; padding: 0 0.5rem; }
   .profile-header { flex-direction: column; gap: 1rem; text-align: center; padding: 1.3rem; }
   .profile-section { padding: 1.2rem; }
   .stats-grid { grid-template-columns: 1fr; gap: 1rem; }
+  
   .form-header { flex-direction: column; gap: 0.8rem; align-items: stretch; }
-  .form-actions { flex-direction: column; }
-  .profile-form { padding: 1.2rem; }
+
+  /* Mobile Navigation */
+  .hamburger-menu { display: block; }
+  .header-container .main-nav {
+    flex-direction: column;
+    justify-content: center; /* Centered links */
+    gap: 2rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(255, 255, 255, 0.98); /* Added backdrop effect */
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.26s, visibility 0.26s, transform 0.26s;
+  }
+  .header-container .main-nav a {
+    font-size: 1.4rem;
+    color: var(--text-color);
+  }
+  .header-container .main-nav span a {
+    font-weight: bold;
+    color: var(--primary-color);
+  }
+  header.mobile-menu-open .main-nav {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  header.mobile-menu-open .hamburger-menu .icon-hamburger {
+    opacity: 0;
+    transform: rotate(90deg);
+  }
+  header.mobile-menu-open .hamburger-menu .icon-close {
+    opacity: 1;
+    transform: rotate(0deg);
+    color: var(--text-color);
+  }
 }
+
 @media (max-width: 600px) {
   .form-container { padding: 0.8rem !important; }
   .question-editor-card { padding: 7px 2px 6px 2px; }
   .options-area input[type="text"] { max-width: 100%; }
   .mc-btn, .remove-option-btn, .add-option-btn, .delete-question-btn { padding: 6px 9px; font-size: 0.96rem; }
-  .image-preview-wrapper { max-width: 98vw !important; padding-left: 0; padding-right: 0; }
-  .image-preview { max-width: 98vw !important; max-height: 42vw !important; border-radius: 7px !important; }
-}
 
-/* --- Image Preview FadeIn Animation --- */
-.image-preview[style*="display: block"] {
-  animation: fadeInImg 0.32s ease;
-}
-@keyframes fadeInImg {
-  from { opacity: 0; transform: scale(0.97);}
-  to   { opacity: 1; transform: scale(1);}
-}
-
-/* ...（前略、全体白ベースのCSSはそのまま）... */
-
-/* -----------------------------------------------------------------
-   画像プレビュー（PC＆スマホ両対応）
-------------------------------------------------------------------- */
-.image-preview-wrapper {
-  width: 100%;
-  max-width: 360px;
-  margin: 1.2em auto 0 auto;
-  text-align: center;
-  display: flex;
-  justify-content: center;
-}
-
-.image-preview {
-  display: block;
-  max-width: 100%;
-  max-height: 240px;
-  width: auto !important;
-  height: auto !important;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px #0002;
-  object-fit: contain;
-  background: #fff;
-  margin: 0 auto;
-  border: 1px solid #e1e3e8;
-  transition: box-shadow 0.15s, border 0.15s;
-}
-
-/* --- スマホ用に強制上書き --- */
-@media (max-width: 600px) {
   .image-preview-wrapper {
     max-width: 98vw !important;
     padding-left: 0;
@@ -1205,16 +1187,5 @@ footer {
     max-width: 98vw !important;
     max-height: 42vw !important;
     border-radius: 7px !important;
-    width: auto !important;
-    height: auto !important;
   }
-}
-
-/* --- 画像フェードイン効果 --- */
-.image-preview[style*="display: block"] {
-  animation: fadeInImg 0.32s ease;
-}
-@keyframes fadeInImg {
-  from { opacity: 0; transform: scale(0.97);}
-  to   { opacity: 1; transform: scale(1);}
 }

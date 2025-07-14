@@ -38,9 +38,9 @@
                                 <% }); %>
                             </div>
                         <% } else if (q.type === 'short_answer') { %>
-                            <input type="text" name="answers[<%= index %>]" placeholder="解答を入力">
+                            <input type="text" name="answers[<%= index %>]" placeholder="解答を入力" autocomplete="off">
                         <% } else { %>
-                            <textarea name="answers[<%= index %>]" rows="4" placeholder="解答を記述"></textarea>
+                            <textarea name="answers[<%= index %>]" rows="4" placeholder="解答を記述" autocomplete="off"></textarea>
                         <% } %>
                     </div>
                 </div>
