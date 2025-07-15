@@ -137,6 +137,8 @@ ${JSON.stringify(initialQuestions, null, 2)}
                 difficulty,
                 questions: verifiedQuestions,
                 visibility: 'private',
+                author: req.session.user.username,
+                ownerId: req.session.user.uid,
             };
 
             res.render('solve-quiz', { user: req.session.user, quiz: draftQuiz, isDraft: true });
@@ -192,6 +194,8 @@ router.post('/create', requireLogin, async (req, res) => {
             title: title && title.trim() !== '' ? title.trim() : `${topic}のテスト`,
             subject, difficulty, questions,
             visibility: 'private',
+            author: req.session.user.username,
+            ownerId: req.session.user.uid,
         };
 
         res.render('solve-quiz', { user: req.session.user, quiz: draftQuiz, isDraft: true });
