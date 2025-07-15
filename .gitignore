@@ -3,3 +3,15 @@
 /node_modules
 /config/synapse-note-837bf-2442a02e69ce.json
 /package-lock.json
+
+# Vercel
+.vercel
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+/tmp

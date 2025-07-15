@@ -4,7 +4,11 @@
   "description": "An application for generating and grading English and Japanese language quizzes using Gemini.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo 'No build step required'",
+    "vercel-build": "echo 'Build completed'",
+    "validate-env": "node validate-env.js"
   },
   "author": "Zaku Lv1",
   "license": "ISC",

@@ -18,13 +18,34 @@ const PORT = process.env.PORT || 3000;
 // Firebase Admin SDKの初期化
 let db;
 try {
-  // 本番環境（Render, Fly.ioなど）では、環境変数 GOOGLE_APPLICATION_CREDENTIALS_JSON を
-  // 設定することで、引数なしで初期化するのが一般的です。
-  admin.initializeApp();
+  let adminConfig = {};
+  
+  // 環境変数からFirebase設定を読み込み
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+    // Vercelなどのサーバーレス環境向け：JSON文字列から認証情報を取得
+    const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    adminConfig.credential = admin.credential.cert(serviceAccount);
+  } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    // ローカル開発環境向け：ファイルパスから認証情報を取得
+    adminConfig.credential = admin.credential.cert(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  }
+  // 上記のいずれも設定されていない場合は、デフォルトの認証情報を使用（Google Cloud環境など）
+  
+  // プロジェクトIDが明示的に設定されている場合は追加
+  if (process.env.FIREBASE_PROJECT_ID) {
+    adminConfig.projectId = process.env.FIREBASE_PROJECT_ID;
+  }
+  
+  // Firebase Admin SDKを初期化
+  if (admin.apps.length === 0) {
+    admin.initializeApp(adminConfig);
+  }
+  
   db = admin.firestore();
   console.log("Firebase Admin SDK initialized successfully.");
 } catch (error) {
   console.error("Error initializing Firebase Admin SDK:", error);
+  console.error("Please ensure GOOGLE_APPLICATION_CREDENTIALS_JSON or GOOGLE_APPLICATION_CREDENTIALS is properly set.");
   process.exit(1);
 }
 
@@ -43,6 +64,11 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // セッションの設定 (FirestoreStoreを使用)
+if (!process.env.SESSION_SECRET) {
+    console.error("SESSION_SECRET environment variable is required");
+    process.exit(1);
+}
+
 app.use(session({
     store: new FirestoreStore({
         dataset: db,
@@ -99,7 +125,24 @@ app.use('/profile', profileRoutes); // プロフィール関連 (/profile/edit, 
 // ★★★ ここまでが修正点 ★★★
 
 // ----------------------------------------------------------------
-// 3.5. 404 Not Found ハンドラー (最後に配置)
+// 3.5. Health check endpoint
+// ----------------------------------------------------------------
+app.get('/health', (req, res) => {
+    const healthStatus = {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        version: require('./package.json').version,
+        environment: process.env.NODE_ENV || 'development',
+        firebase: !!db,
+        session: !!process.env.SESSION_SECRET,
+        ai: !!process.env.GEMINI_API_KEY
+    };
+    
+    res.json(healthStatus);
+});
+
+// ----------------------------------------------------------------
+// 3.6. 404 Not Found ハンドラー (最後に配置)
 // ----------------------------------------------------------------
 // 全てのルートに一致しなかった場合の404エラーハンドラ
 app.use((req, res) => {
