@@ -59,12 +59,12 @@
                             <% } %>
                         </td>
                         <td>
-                            <span class="status-badge <%= quiz.isPublic ? 'public' : 'private' %>">
-                                <%= quiz.isPublic ? '公開' : '非公開' %>
+                            <span class="status-badge <%= quiz.visibility === 'public' ? 'public' : 'private' %>">
+                                <%= quiz.visibility === 'public' ? '公開' : '非公開' %>
                             </span>
                         </td>
                         <td class="action-buttons">
-                            <a href="/quiz/solve/<%= quiz.id %>" 
+                            <a href="/quiz/<%= quiz.id %>" 
                                class="btn btn-view" 
                                target="_blank">プレビュー</a>
                             <form method="POST" action="/admin/quizzes/<%= quiz.id %>/delete" 

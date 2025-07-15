@@ -95,9 +95,9 @@ router.get('/quizzes', requireAdmin, async (req, res) => {
             
             // クイズ作成者情報を取得
             let creatorName = '不明';
-            if (quizData.createdBy) {
+            if (quizData.ownerId) {
                 try {
-                    const userDoc = await db.collection('users').doc(quizData.createdBy).get();
+                    const userDoc = await db.collection('users').doc(quizData.ownerId).get();
                     if (userDoc.exists) {
                         creatorName = userDoc.data().username;
                     }
