@@ -14,7 +14,15 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const multer = require('multer');
 
 // --- Firebase/AI初期化 ---
-const db = admin.firestore();
+// Firestore データベースインスタンス (lazy initialization)
+function getDb() {
+    try {
+        return admin.firestore();
+    } catch (error) {
+        console.error('Firebase not initialized:', error.message);
+        return null;
+    }
+}
 
 // Gemini API初期化（APIキーの存在確認）
 let genAI, model;
@@ -520,23 +528,62 @@ router.get('/:quizId/delete', requireLogin, async (req, res) => {
  */
 router.get('/:quizId', async (req, res) => {
     try {
-        const quizDoc = await db.collection('quizzes').doc(req.params.quizId).get();
-        if (!quizDoc.exists) return res.status(404).send("クイズが見つかりません。");
+        // Check if database is available
+        const db = getDb();
+        if (!db) {
+            console.error("Database not available for quiz:", req.params.quizId);
+            return res.status(500).render('404', {
+                title: 'データベースエラー - Database Error',
+                message: 'データベースに接続できません。設定を確認してください。',
+                user: req.session?.user || null
+            });
+        }
+
+        // Add timeout for database query to prevent hanging in serverless environment
+        const quizDoc = await Promise.race([
+            db.collection('quizzes').doc(req.params.quizId).get(),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Database query timeout')), 10000)
+            )
+        ]);
+        
+        if (!quizDoc.exists) {
+            return res.status(404).render('404', {
+                title: 'クイズが見つかりません - Quiz Not Found',
+                message: 'お探しのクイズは削除されたか、URLが間違っている可能性があります。',
+                quizId: req.params.quizId,
+                user: req.session?.user || null
+            });
+        }
+        
         const quiz = quizDoc.data();
         
         // アクセス権限チェック: private の場合のみログインと所有者チェックが必要
         if (quiz.visibility === 'private' && (!req.session.user || quiz.ownerId !== req.session.user.uid)) {
-            return res.status(403).send("アクセス権限がありません。");
+            return res.status(403).render('404', {
+                title: 'アクセス権限がありません - Access Denied',
+                message: 'このクイズにアクセスする権限がありません。',
+                user: req.session?.user || null
+            });
         }
         
         res.render('solve-quiz', { user: req.session.user || null, quiz: { id: quizDoc.id, ...quiz }, isDraft: false });
     } catch (error) {
         console.error("クイズ表示エラー:", error);
-        res.render('solve-quiz', {
-            user: req.session.user || null,
-            quiz: null,
-            isDraft: false,
-            error: "クイズの表示中にエラーが発生しました。時間をおいて再度お試しください。"
+        
+        // Better error handling based on error type
+        if (error.message === 'Database query timeout') {
+            return res.status(504).render('404', {
+                title: 'タイムアウトエラー - Timeout Error',
+                message: 'データベースへの接続がタイムアウトしました。しばらく待ってから再度お試しください。',
+                user: req.session?.user || null
+            });
+        }
+        
+        return res.status(500).render('404', {
+            title: 'サーバーエラー - Server Error',
+            message: 'クイズの表示中にエラーが発生しました。時間をおいて再度お試しください。',
+            user: req.session?.user || null
         });
     }
 });

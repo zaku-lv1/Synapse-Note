@@ -3,7 +3,16 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const admin = require('firebase-admin');
 
-const db = admin.firestore();
+// Firestore データベースインスタンス (lazy initialization)
+function getDb() {
+    try {
+        return admin.firestore();
+    } catch (error) {
+        console.error('Firebase not initialized:', error.message);
+        return null;
+    }
+}
+
 const saltRounds = 10;
 
 // --- ページ表示 ---
@@ -11,6 +20,15 @@ router.get('/register', async (req, res) => {
     if (req.session.user) return res.redirect('/dashboard');
     
     try {
+        const db = getDb();
+        if (!db) {
+            return res.render('register', { 
+                error: 'データベースに接続できません。', 
+                user: req.session.user,
+                registrationMessage: ''
+            });
+        }
+
         // システム設定を確認
         const settingsDoc = await db.collection('system_settings').doc('general').get();
         const settings = settingsDoc.exists ? settingsDoc.data() : { allowRegistration: true };
@@ -31,7 +49,7 @@ router.get('/register', async (req, res) => {
     } catch (error) {
         console.error("Register page error:", error);
         res.render('register', { 
-            error: null, 
+            error: 'システムエラーが発生しました。', 
             user: req.session.user,
             registrationMessage: ''
         });

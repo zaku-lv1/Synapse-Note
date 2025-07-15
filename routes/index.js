@@ -16,8 +16,15 @@ const express = require('express');
 const router = express.Router();
 const admin = require('firebase-admin');
 
-// Firestore データベースインスタンス
-const db = admin.firestore();
+// Firestore データベースインスタンス (lazy initialization)
+function getDb() {
+    try {
+        return admin.firestore();
+    } catch (error) {
+        console.error('Firebase not initialized:', error.message);
+        return null;
+    }
+}
 
 /**
  * 認証ミドルウェア
@@ -65,6 +72,14 @@ router.get('/dashboard', requireLogin, (req, res) => {
  */
 router.get('/my-history', requireLogin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         // Firestoreから該当ユーザーの挑戦履歴を取得
         // 新しい順（attemptedAt降順）でソート
         const attemptsSnapshot = await db.collection('quiz_attempts')
@@ -89,12 +104,23 @@ router.get('/my-history', requireLogin, async (req, res) => {
         res.render('my-history', { user: req.session.user, attempts: attempts });
     } catch (error) {
         console.error("History Error:", error);
-        res.status(500).send("サーバーエラー");
+        res.status(500).render('error', {
+            message: '履歴の取得中にエラーが発生しました。',
+            user: req.session.user
+        });
     }
 });
 
 router.get('/public-quizzes', async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session?.user || null
+            });
+        }
+
         const quizzesSnapshot = await db.collection('quizzes')
             .where('visibility', 'in', ['public', 'unlisted'])
             .orderBy('createdAt', 'desc')
@@ -124,10 +150,13 @@ router.get('/public-quizzes', async (req, res) => {
             };
         }));
         
-        res.render('public-quizzes', { user: req.session.user, quizzes: quizzes });
+        res.render('public-quizzes', { user: req.session?.user || null, quizzes: quizzes });
     } catch (error) {
         console.error("Public Quizzes Error:", error);
-        res.status(500).send("サーバーエラー");
+        res.status(500).render('error', {
+            message: '公開クイズの取得中にエラーが発生しました。',
+            user: req.session?.user || null
+        });
     }
 });
 
