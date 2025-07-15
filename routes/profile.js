@@ -66,6 +66,27 @@ router.get('/', requireAuth, async (req, res) => {
     }
 });
 
+// プロフィール編集ページ
+router.get('/edit', requireAuth, async (req, res) => {
+    try {
+        const userId = req.session.user.uid;
+        const userDoc = await db.collection('users').doc(userId).get();
+        
+        if (!userDoc.exists) {
+            return res.redirect('/login');
+        }
+        
+        const userData = userDoc.data();
+        res.render('profile-edit', { 
+            user: userData,
+            title: 'プロフィール編集'
+        });
+    } catch (error) {
+        console.error('プロフィール編集ページエラー:', error);
+        res.status(500).render('error', { message: 'ページの読み込みに失敗しました' });
+    }
+});
+
 // ハンドルによる他のユーザーのプロフィール表示
 router.get('/:handle', async (req, res) => {
     try {
@@ -136,27 +157,6 @@ router.get('/:handle', async (req, res) => {
     } catch (error) {
         console.error('プロフィール取得エラー:', error);
         res.status(500).render('error', { message: 'プロフィールの取得に失敗しました' });
-    }
-});
-
-// プロフィール編集ページ
-router.get('/edit', requireAuth, async (req, res) => {
-    try {
-        const userId = req.session.user.uid;
-        const userDoc = await db.collection('users').doc(userId).get();
-        
-        if (!userDoc.exists) {
-            return res.redirect('/login');
-        }
-        
-        const userData = userDoc.data();
-        res.render('profile-edit', { 
-            user: userData,
-            title: 'プロフィール編集'
-        });
-    } catch (error) {
-        console.error('プロフィール編集ページエラー:', error);
-        res.status(500).render('error', { message: 'ページの読み込みに失敗しました' });
     }
 });
 
