@@ -151,10 +151,10 @@ app.get('/:possibleQuizId', async (req, res, next) => {
     
     // Check if this looks like a quiz ID pattern
     // Quiz IDs often contain colons, dashes, alphanumeric characters
-    // Pattern: must contain :: OR be a long string with dashes (but not common page names)
-    // We'll be more liberal and let the database check do the real validation
-    const knownPages = ['dashboard', 'login', 'register', 'logout', 'my-quizzes', 'create-quiz', 'public-quizzes', 'my-history', 'profile', 'admin', 'health'];
-    const quizIdPattern = /^[a-zA-Z0-9]+::|[a-zA-Z0-9\-]{10,}$/;
+    // Pattern: must contain :: OR be a very long string with dashes (but not common page names)
+    // We'll be more strict to avoid false positives
+    const knownPages = ['dashboard', 'login', 'register', 'logout', 'my-quizzes', 'create-quiz', 'public-quizzes', 'my-history', 'profile', 'admin', 'health', 'nonexistent-page'];
+    const quizIdPattern = /^[a-zA-Z0-9]+::|^[a-zA-Z0-9]+-[0-9]{10,}-[a-zA-Z0-9]+$/;
     
     if (knownPages.includes(possibleQuizId.toLowerCase()) || !quizIdPattern.test(possibleQuizId)) {
         // It's a known page or doesn't match quiz ID pattern, continue to 404 handler
@@ -176,13 +176,20 @@ app.get('/:possibleQuizId', async (req, res, next) => {
             return res.status(404).render('404', {
                 title: 'クイズが見つかりません - Quiz Not Found',
                 message: 'お探しのクイズは削除されたか、URLが間違っている可能性があります。',
-                quizId: possibleQuizId
+                quizId: possibleQuizId,
+                user: req.session?.user || null
             });
         }
     } catch (error) {
         console.error(`Error checking quiz ID ${possibleQuizId}:`, error);
-        // Database error, continue to general 404 handler
-        return next();
+        // Database error, but since it looks like a quiz ID, show quiz-specific 404 message
+        console.log(`Database error for quiz-like ID: ${possibleQuizId}, showing quiz-specific 404`);
+        return res.status(404).render('404', {
+            title: 'クイズが見つかりません - Quiz Not Found',
+            message: 'お探しのクイズは削除されたか、URLが間違っている可能性があります。データベースエラーが発生しました。',
+            quizId: possibleQuizId,
+            user: req.session?.user || null
+        });
     }
 });
 
@@ -192,7 +199,8 @@ app.get('/:possibleQuizId', async (req, res, next) => {
 // 全てのルートに一致しなかった場合の404エラーハンドラ
 app.use((req, res) => {
     res.status(404).render('404', {
-        title: 'ページが見つかりません - 404 Not Found'
+        title: 'ページが見つかりません - 404 Not Found',
+        user: req.session?.user || null
     });
 });
 
