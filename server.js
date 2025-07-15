@@ -125,7 +125,24 @@ app.use('/profile', profileRoutes); // プロフィール関連 (/profile/edit, 
 // ★★★ ここまでが修正点 ★★★
 
 // ----------------------------------------------------------------
-// 3.5. 404 Not Found ハンドラー (最後に配置)
+// 3.5. Health check endpoint
+// ----------------------------------------------------------------
+app.get('/health', (req, res) => {
+    const healthStatus = {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        version: require('./package.json').version,
+        environment: process.env.NODE_ENV || 'development',
+        firebase: !!db,
+        session: !!process.env.SESSION_SECRET,
+        ai: !!process.env.GEMINI_API_KEY
+    };
+    
+    res.json(healthStatus);
+});
+
+// ----------------------------------------------------------------
+// 3.6. 404 Not Found ハンドラー (最後に配置)
 // ----------------------------------------------------------------
 // 全てのルートに一致しなかった場合の404エラーハンドラ
 app.use((req, res) => {
