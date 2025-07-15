@@ -70,6 +70,7 @@
 1. **"Firebase Admin SDK initialization failed"**
    - Check `GOOGLE_APPLICATION_CREDENTIALS_JSON` format
    - Verify service account permissions
+   - **New**: Application will continue running with degraded functionality
 
 2. **"Session secret required"**
    - Ensure `SESSION_SECRET` is set in Vercel environment variables
@@ -81,8 +82,16 @@
 4. **Database connection issues**
    - Verify Firestore permissions
    - Check Firebase project ID
+   - **New**: Use `/health` endpoint to check database status
+
+5. **"Not Found" errors (FIXED)**
+   - Quiz-like URLs now redirect properly instead of causing errors
+   - Check `/health` endpoint for database connectivity
+   - Verify environment variables are set correctly
 
 ### Getting Help
 - Check Vercel function logs in the dashboard
 - Use `npm run validate-env` for configuration issues
 - Review `DEPLOYMENT.md` for detailed setup instructions
+- **New**: Check `/health` endpoint for real-time status information
+- **New**: Review `VERCEL_FIX_DOCUMENTATION.md` for specific Vercel deployment fixes
