@@ -1,0 +1,244 @@
+<%- include('../partials/header') %>
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h2 class="page-title">管理者ダッシュボード</h2>
+        <p class="welcome-message">ようこそ、管理者の<%= user.username %>さん</p>
+    </div>
+
+    <!-- 統計カード -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <h3><%= stats.totalUsers %></h3>
+                <p>総ユーザー数</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 12l2 2 4-4"></path>
+                    <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"></path>
+                    <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"></path>
+                    <path d="M13 12h3a2 2 0 0 1 2 2v.5"></path>
+                    <path d="M8 12H5a2 2 0 0 0-2 2v.5"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <h3><%= stats.totalQuizzes %></h3>
+                <p>総クイズ数</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14"></path>
+                    <path d="M5 12h14"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <h3><%= stats.totalAttempts %></h3>
+                <p>総挑戦回数</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 6v6l4 2"></path>
+                    <circle cx="12" cy="12" r="10"></circle>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <h3><%= stats.adminCount %></h3>
+                <p>管理者数</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理メニュー -->
+    <div class="admin-menu">
+        <h3>管理メニュー</h3>
+        <div class="action-list">
+            <a href="/admin/users" class="action-card">
+                <div class="card-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <h4>ユーザー管理</h4>
+                    <p>ユーザーの一覧表示・管理者権限の付与・削除</p>
+                </div>
+            </a>
+
+            <a href="/admin/quizzes" class="action-card">
+                <div class="card-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14,2 14,8 20,8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10,9 9,9 8,9"></polyline>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <h4>クイズ管理</h4>
+                    <p>全クイズの一覧表示・削除・内容確認</p>
+                </div>
+            </a>
+
+            <a href="/admin/settings" class="action-card">
+                <div class="card-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <h4>システム設定</h4>
+                    <p>新規登録の受付設定・メンテナンスモード等</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- 現在の設定状況 -->
+    <div class="current-settings">
+        <h3>現在の設定状況</h3>
+        <div class="settings-status">
+            <div class="status-item">
+                <span class="status-label">新規登録受付:</span>
+                <span class="status-value <%= settings.allowRegistration ? 'enabled' : 'disabled' %>">
+                    <%= settings.allowRegistration ? '有効' : '無効' %>
+                </span>
+            </div>
+            <% if (settings.maintenanceMode) { %>
+            <div class="status-item">
+                <span class="status-label">メンテナンスモード:</span>
+                <span class="status-value disabled">有効</span>
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stat-icon {
+    background: #4a90e2;
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-content h3 {
+    font-size: 2em;
+    margin: 0;
+    color: #333;
+}
+
+.stat-content p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.admin-menu {
+    margin-bottom: 40px;
+}
+
+.admin-menu h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.current-settings {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.current-settings h3 {
+    margin-bottom: 16px;
+    color: #333;
+}
+
+.settings-status {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.status-label {
+    font-weight: 500;
+    color: #666;
+}
+
+.status-value {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.status-value.enabled {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-value.disabled {
+    background: #f8d7da;
+    color: #721c24;
+}
+</style>
+
+<%- include('../partials/footer') %>

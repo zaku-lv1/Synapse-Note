@@ -1,0 +1,206 @@
+<%- include('partials/header') %>
+
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h2>初回管理者登録</h2>
+            <p>システムの初回管理者を登録します。管理者キーが必要です。</p>
+        </div>
+
+        <% if (error) { %>
+        <div class="error-message">
+            <%= error %>
+        </div>
+        <% } %>
+
+        <form method="POST" action="/setup-admin" class="auth-form">
+            <div class="form-group">
+                <label for="username">ユーザー名</label>
+                <input type="text" id="username" name="username" required 
+                       placeholder="表示名を入力してください" maxlength="50">
+            </div>
+
+            <div class="form-group">
+                <label for="handle">ハンドル名</label>
+                <div class="handle-input">
+                    <span class="handle-prefix">@</span>
+                    <input type="text" id="handle" name="handle" required 
+                           placeholder="ユニークなIDを入力" pattern="[a-zA-Z0-9_]+" 
+                           title="英数字とアンダースコアのみ使用可能" maxlength="30">
+                </div>
+                <small class="form-hint">英数字とアンダースコア(_)のみ使用可能</small>
+            </div>
+
+            <div class="form-group">
+                <label for="password">パスワード</label>
+                <input type="password" id="password" name="password" required 
+                       placeholder="安全なパスワードを設定してください" minlength="8">
+                <small class="form-hint">8文字以上で設定してください</small>
+            </div>
+
+            <div class="form-group">
+                <label for="adminKey">管理者キー</label>
+                <input type="password" id="adminKey" name="adminKey" required 
+                       placeholder="管理者キーを入力してください">
+                <small class="form-hint">システム管理者から提供された管理者キーを入力</small>
+            </div>
+
+            <button type="submit" class="auth-submit">管理者として登録</button>
+        </form>
+
+        <div class="auth-links">
+            <a href="/">トップページに戻る</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-container {
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.auth-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    padding: 40px;
+    width: 100%;
+    max-width: 480px;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.auth-header h2 {
+    margin: 0 0 12px 0;
+    color: #333;
+    font-size: 1.8em;
+}
+
+.auth-header p {
+    margin: 0;
+    color: #666;
+    line-height: 1.5;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    border: 1px solid #f5c6cb;
+}
+
+.auth-form {
+    margin-bottom: 24px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.handle-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.handle-prefix {
+    position: absolute;
+    left: 16px;
+    color: #666;
+    font-weight: 500;
+    z-index: 1;
+}
+
+.handle-input input {
+    padding-left: 32px;
+}
+
+.form-hint {
+    display: block;
+    margin-top: 4px;
+    color: #666;
+    font-size: 0.85em;
+}
+
+.auth-submit {
+    width: 100%;
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.auth-submit:hover {
+    background: #c82333;
+}
+
+.auth-submit:active {
+    transform: translateY(1px);
+}
+
+.auth-links {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid #e1e5e9;
+}
+
+.auth-links a {
+    color: #4a90e2;
+    text-decoration: none;
+    font-size: 0.9em;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .auth-card {
+        padding: 24px;
+        margin: 10px;
+    }
+    
+    .auth-header h2 {
+        font-size: 1.5em;
+    }
+}
+</style>
+
+<%- include('partials/footer') %>

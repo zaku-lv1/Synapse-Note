@@ -1,0 +1,301 @@
+<%- include('../partials/header') %>
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h2 class="page-title">クイズ管理</h2>
+        <p class="breadcrumb">
+            <a href="/admin">管理者ダッシュボード</a> / クイズ管理
+        </p>
+    </div>
+
+    <!-- メッセージ表示 -->
+    <% if (typeof message !== 'undefined' && message) { %>
+    <div class="alert alert-success">
+        <%= message %>
+    </div>
+    <% } %>
+    <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-error">
+        <%= error %>
+    </div>
+    <% } %>
+
+    <!-- クイズ一覧 -->
+    <div class="quizzes-table-container">
+        <div class="table-header">
+            <h3>クイズ一覧 (<%= quizzes.length %>件)</h3>
+        </div>
+
+        <div class="table-responsive">
+            <table class="quizzes-table">
+                <thead>
+                    <tr>
+                        <th>タイトル</th>
+                        <th>作成者</th>
+                        <th>問題数</th>
+                        <th>作成日</th>
+                        <th>公開設定</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% quizzes.forEach(quiz => { %>
+                    <tr>
+                        <td>
+                            <div class="quiz-title">
+                                <strong><%= quiz.title || '無題のクイズ' %></strong>
+                                <% if (quiz.description) { %>
+                                <div class="quiz-description"><%= quiz.description.substring(0, 100) %>...</div>
+                                <% } %>
+                            </div>
+                        </td>
+                        <td><%= quiz.creatorName %></td>
+                        <td><%= quiz.questions ? quiz.questions.length : 0 %>問</td>
+                        <td>
+                            <% if (quiz.createdAt && quiz.createdAt.seconds) { %>
+                                <%= new Date(quiz.createdAt.seconds * 1000).toLocaleDateString('ja-JP') %>
+                            <% } else { %>
+                                不明
+                            <% } %>
+                        </td>
+                        <td>
+                            <span class="status-badge <%= quiz.isPublic ? 'public' : 'private' %>">
+                                <%= quiz.isPublic ? '公開' : '非公開' %>
+                            </span>
+                        </td>
+                        <td class="action-buttons">
+                            <a href="/quiz/solve/<%= quiz.id %>" 
+                               class="btn btn-view" 
+                               target="_blank">プレビュー</a>
+                            <form method="POST" action="/admin/quizzes/<%= quiz.id %>/delete" 
+                                  onsubmit="return confirm('このクイズを削除しますか？関連する挑戦履歴も削除されます。')" 
+                                  style="display: inline;">
+                                <button type="submit" class="btn btn-delete">削除</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+
+        <% if (quizzes.length === 0) { %>
+        <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14,2 14,8 20,8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            <h3>クイズがありません</h3>
+            <p>まだクイズが作成されていません。</p>
+        </div>
+        <% } %>
+    </div>
+
+    <div class="admin-actions">
+        <a href="/admin" class="btn btn-secondary">ダッシュボードに戻る</a>
+    </div>
+</div>
+
+<style>
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-header {
+    margin-bottom: 30px;
+}
+
+.breadcrumb {
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 8px;
+}
+
+.breadcrumb a {
+    color: #4a90e2;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.quizzes-table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.table-header {
+    background: #f8f9fa;
+    padding: 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.table-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.quizzes-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.quizzes-table th,
+.quizzes-table td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.quizzes-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+.quiz-title strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.quiz-description {
+    font-size: 0.85em;
+    color: #666;
+    line-height: 1.4;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.status-badge.public {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.private {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85em;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.btn-view {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-view:hover {
+    background: #138496;
+}
+
+.btn-delete {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-delete:hover {
+    background: #c82333;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.empty-state svg {
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    margin: 0 0 8px 0;
+    color: #333;
+}
+
+.empty-state p {
+    margin: 0;
+}
+
+.admin-actions {
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .quizzes-table th,
+    .quizzes-table td {
+        padding: 12px 8px;
+        font-size: 0.9em;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .quiz-description {
+        display: none;
+    }
+}
+</style>
+
+<%- include('../partials/footer') %>

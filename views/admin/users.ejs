@@ -1,0 +1,275 @@
+<%- include('../partials/header') %>
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h2 class="page-title">ユーザー管理</h2>
+        <p class="breadcrumb">
+            <a href="/admin">管理者ダッシュボード</a> / ユーザー管理
+        </p>
+    </div>
+
+    <!-- メッセージ表示 -->
+    <% if (typeof message !== 'undefined' && message) { %>
+    <div class="alert alert-success">
+        <%= message %>
+    </div>
+    <% } %>
+    <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-error">
+        <%= error %>
+    </div>
+    <% } %>
+
+    <!-- ユーザー一覧 -->
+    <div class="users-table-container">
+        <div class="table-header">
+            <h3>ユーザー一覧 (<%= users.length %>人)</h3>
+        </div>
+
+        <div class="table-responsive">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>ユーザー名</th>
+                        <th>ハンドル</th>
+                        <th>登録日</th>
+                        <th>権限</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% users.forEach(userItem => { %>
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <strong><%= userItem.username %></strong>
+                                <% if (userItem.isAdmin) { %>
+                                <span class="admin-badge">管理者</span>
+                                <% } %>
+                            </div>
+                        </td>
+                        <td><%= userItem.handle %></td>
+                        <td>
+                            <%= new Date(userItem.createdAt.seconds * 1000).toLocaleDateString('ja-JP') %>
+                        </td>
+                        <td>
+                            <span class="role-badge <%= userItem.isAdmin ? 'admin' : 'user' %>">
+                                <%= userItem.isAdmin ? '管理者' : '一般ユーザー' %>
+                            </span>
+                        </td>
+                        <td class="action-buttons">
+                            <% if (!userItem.isAdmin) { %>
+                            <form method="POST" action="/admin/users/<%= userItem.id %>/promote" 
+                                  onsubmit="return confirm('このユーザーを管理者に昇格させますか？')" 
+                                  style="display: inline;">
+                                <button type="submit" class="btn btn-promote">管理者に昇格</button>
+                            </form>
+                            <% } else if (userItem.id !== user.uid) { %>
+                            <form method="POST" action="/admin/users/<%= userItem.id %>/demote" 
+                                  onsubmit="return confirm('このユーザーの管理者権限を取り消しますか？')" 
+                                  style="display: inline;">
+                                <button type="submit" class="btn btn-demote">権限取り消し</button>
+                            </form>
+                            <% } else { %>
+                            <span class="current-user">あなた</span>
+                            <% } %>
+                        </td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="admin-actions">
+        <a href="/admin" class="btn btn-secondary">ダッシュボードに戻る</a>
+    </div>
+</div>
+
+<style>
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-header {
+    margin-bottom: 30px;
+}
+
+.breadcrumb {
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 8px;
+}
+
+.breadcrumb a {
+    color: #4a90e2;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.users-table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.table-header {
+    background: #f8f9fa;
+    padding: 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.table-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.users-table th,
+.users-table td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.users-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-badge {
+    background: #4a90e2;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 500;
+}
+
+.role-badge {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.role-badge.admin {
+    background: #d4edda;
+    color: #155724;
+}
+
+.role-badge.user {
+    background: #e2e3e5;
+    color: #495057;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85em;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.btn-promote {
+    background: #28a745;
+    color: white;
+}
+
+.btn-promote:hover {
+    background: #218838;
+}
+
+.btn-demote {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-demote:hover {
+    background: #c82333;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.current-user {
+    color: #666;
+    font-style: italic;
+    font-size: 0.85em;
+}
+
+.admin-actions {
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .users-table th,
+    .users-table td {
+        padding: 12px 8px;
+        font-size: 0.9em;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 4px;
+    }
+}
+</style>
+
+<%- include('../partials/footer') %>

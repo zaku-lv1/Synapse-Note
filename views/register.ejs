@@ -4,6 +4,18 @@
     <div class="auth-container">
         <h2 class="page-title">新規登録</h2>
 
+        <% if (error) { %>
+        <div class="error-message">
+            <%= error %>
+        </div>
+        <% } %>
+
+        <% if (registrationMessage) { %>
+        <div class="info-message">
+            <%= registrationMessage %>
+        </div>
+        <% } %>
+
         <form action="/register" method="POST">
             <div class="form-group">
                 <label for="username">ユーザー名（表示名）</label>
