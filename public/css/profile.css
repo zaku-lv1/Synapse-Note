@@ -1,10 +1,24 @@
-/* Profile Page Specific Styles */
+/**
+ * Synapse Note - Profile Page Specific Styles
+ * 
+ * このファイルはプロフィールページと編集ページに特化したスタイルを提供します：
+ * - プロフィールヘッダーのレイアウト
+ * - アバター/アイコンエリアのスタイリング
+ * - 統計情報グリッドの表示
+ * - プロフィール編集フォームの最適化
+ * 
+ * レスポンシブ対応:
+ * - モバイル: 縦積みレイアウト
+ * - タブレット: 2列グリッド
+ * - デスクトップ: 柔軟なグリッドレイアウト
+ */
 
-/* Enhanced profile avatar/icon area */
+/* ===== プロフィールアバター/アイコンエリア ===== */
 .profile-avatar {
     width: 80px;
     height: 80px;
     border-radius: 50%;
+    /* グラデーション背景でユーザーイニシャルを表示 */
     background: linear-gradient(135deg, #3178d7, #245ba1);
     display: flex;
     align-items: center;
@@ -13,10 +27,15 @@
     font-size: 2rem;
     font-weight: 700;
     margin-bottom: 1rem;
-    flex-shrink: 0;
+    flex-shrink: 0;                     /* アバターサイズを固定 */
+    transition: transform 0.2s ease;    /* ホバーエフェクト用 */
 }
 
-/* Profile header improvements */
+.profile-avatar:hover {
+    transform: scale(1.05);             /* 軽いズームエフェクト */
+}
+
+/* ===== プロフィールヘッダーの改良 ===== */
 .profile-header {
     display: flex;
     align-items: flex-start;
@@ -26,19 +45,27 @@
     border-radius: 12px;
     box-shadow: 0 4px 6px rgba(49,120,215,0.06);
     margin-bottom: 1.5rem;
+    transition: box-shadow 0.3s ease;
 }
 
+.profile-header:hover {
+    box-shadow: 0 6px 12px rgba(49,120,215,0.1);
+}
+
+/* ===== プロフィール情報エリア ===== */
 .profile-info {
-    flex: 1;
+    flex: 1;                            /* 利用可能スペースを埋める */
 }
 
+/* ===== プロフィールアクションエリア ===== */
 .profile-actions {
-    flex-shrink: 0;
+    flex-shrink: 0;                     /* ボタンサイズを固定 */
 }
 
-/* Enhanced stats grid */
+/* ===== 強化された統計グリッド ===== */
 .stats-grid {
     display: grid;
+    /* レスポンシブグリッド: 最小160px、最大1fr */
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 1.5rem;
 }
@@ -46,24 +73,46 @@
 .stat-item {
     text-align: center;
     padding: 1.5rem;
+    /* 微細なグラデーション背景 */
     background: linear-gradient(135deg, #fafbfc, #f8f9fa);
     border-radius: 12px;
     border: 1px solid var(--border-color);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
 }
 
+/* ホバーエフェクトでインタラクティブ感を向上 */
 .stat-item:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(49,120,215,0.1);
 }
 
-/* Bio section improvements */
+/* 統計アイテムに微細なアクセント */
+.stat-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-hover-color));
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.stat-item:hover::before {
+    opacity: 1;
+}
+
+/* ===== Bio（自己紹介）セクションの改良 ===== */
 .bio-content {
     min-height: 60px;
     padding: 1rem;
     background: #fafbfc;
     border-radius: 8px;
     border-left: 4px solid var(--primary-color);
+    position: relative;
 }
 
 .bio-content p {
@@ -72,32 +121,65 @@
     color: #394452;
 }
 
-/* Success message styling */
+/* Bioが空の場合のプレースホルダー */
+.no-bio {
+    color: #b6bbc8;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+/* ===== アラート/メッセージスタイルの強化 ===== */
 .alert {
     padding: 1rem 1.5rem;
     border-radius: 8px;
     margin-bottom: 1.5rem;
     font-weight: 500;
+    position: relative;
+    border: 1px solid transparent;
 }
 
 .alert-success {
     background: #d4edda;
     color: #155724;
-    border: 1px solid #c3e6cb;
+    border-color: #c3e6cb;
 }
 
 .alert-error {
     background: #f8d7da;
     color: #721c24;
-    border: 1px solid #f5c6cb;
+    border-color: #f5c6cb;
 }
 
-/* Form enhancements */
+/* アラートにアイコンエリアを追加 */
+.alert::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+.alert-success::before {
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23155724' viewBox='0 0 16 16'%3E%3Cpath d='M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z'/%3E%3C/svg%3E") no-repeat;
+}
+
+/* ===== フォーム強化 ===== */
 .char-counter {
     text-align: right;
     margin-top: 0.5rem;
     font-size: 0.85rem;
     color: var(--muted-text-color);
+    transition: color 0.2s ease;
+}
+
+/* 文字数制限に近づいた時の警告色 */
+.char-counter.warning {
+    color: #f39c12;
+}
+
+.char-counter.danger {
+    color: var(--danger-color);
 }
 
 .help-text {
@@ -106,14 +188,17 @@
     font-size: 0.8rem;
     color: var(--muted-text-color);
     font-style: italic;
+    line-height: 1.4;
 }
 
 .required {
     color: var(--danger-color);
+    font-weight: 600;
 }
 
-/* Mobile responsiveness */
+/* ===== レスポンシブ対応 ===== */
 @media (max-width: 768px) {
+    /* モバイル表示の最適化 */
     .profile-header {
         flex-direction: column;
         text-align: center;
@@ -121,9 +206,10 @@
     }
     
     .profile-avatar {
-        margin: 0 auto 1rem auto;
+        margin: 0 auto 1rem auto;       /* 中央寄せ */
     }
     
+    /* 統計グリッドを1列に */
     .stats-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
@@ -131,5 +217,18 @@
     
     .stat-item {
         padding: 1.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    /* 極小画面での最適化 */
+    .profile-header {
+        padding: 1.5rem;
+    }
+    
+    .profile-avatar {
+        width: 64px;
+        height: 64px;
+        font-size: 1.5rem;
     }
 }

@@ -1,30 +1,72 @@
+/**
+ * Synapse Note - メインルートハンドラー
+ * 
+ * このファイルはアプリケーションの主要なルーティングを管理します：
+ * - ホームページの表示制御（ログイン状態に応じたリダイレクト）
+ * - ダッシュボードページの表示
+ * - ユーザーの挑戦履歴の表示
+ * 
+ * 依存関係:
+ * - Express.js ルーター
+ * - Firebase Admin SDK（Firestore）
+ * - セッション管理
+ */
+
 const express = require('express');
 const router = express.Router();
 const admin = require('firebase-admin');
 
+// Firestore データベースインスタンス
 const db = admin.firestore();
 
-// 認証ミドルウェア
+/**
+ * 認証ミドルウェア
+ * ログインが必要なページにアクセスする前にユーザーの認証状態をチェック
+ * 
+ * @param {Object} req - Express リクエストオブジェクト
+ * @param {Object} res - Express レスポンスオブジェクト
+ * @param {Function} next - 次のミドルウェアを呼び出す関数
+ */
 function requireLogin(req, res, next) {
+    // セッションにユーザー情報がない場合はログインページにリダイレクト
     if (!req.session.user) {
         return res.redirect('/login');
     }
+    // 認証済みの場合は次のミドルウェアに進む
     next();
 }
 
+/**
+ * ホームページのルート
+ * ログイン状態に応じて適切なページを表示
+ * - ログイン済み: ダッシュボードにリダイレクト
+ * - 未ログイン: ランディングページを表示
+ */
 router.get('/', (req, res) => {
     if (req.session.user) {
+        // ログイン済みユーザーはダッシュボードへリダイレクト
         return res.redirect('/dashboard');
     }
+    // 未ログインユーザーには紹介ページを表示
     res.render('index', { user: req.session.user });
 });
 
+/**
+ * ダッシュボードページのルート
+ * ログイン済みユーザーのメインハブページ
+ */
 router.get('/dashboard', requireLogin, (req, res) => {
     res.render('dashboard', { user: req.session.user });
 });
 
+/**
+ * 挑戦履歴ページのルート
+ * ユーザーが過去に挑戦したクイズの履歴を表示
+ */
 router.get('/my-history', requireLogin, async (req, res) => {
     try {
+        // Firestoreから該当ユーザーの挑戦履歴を取得
+        // 新しい順（attemptedAt降順）でソート
         const attemptsSnapshot = await db.collection('quiz_attempts')
             .where('userId', '==', req.session.user.uid)
             .orderBy('attemptedAt', 'desc')
