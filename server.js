@@ -28,25 +28,34 @@ try {
   } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     // ローカル開発環境向け：ファイルパスから認証情報を取得
     adminConfig.credential = admin.credential.cert(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  } else {
+    // No credentials provided - warn but don't exit
+    console.warn("No Firebase credentials provided. Some features may not work.");
+    console.warn("Please set GOOGLE_APPLICATION_CREDENTIALS_JSON or GOOGLE_APPLICATION_CREDENTIALS.");
   }
-  // 上記のいずれも設定されていない場合は、デフォルトの認証情報を使用（Google Cloud環境など）
   
   // プロジェクトIDが明示的に設定されている場合は追加
   if (process.env.FIREBASE_PROJECT_ID) {
     adminConfig.projectId = process.env.FIREBASE_PROJECT_ID;
   }
   
-  // Firebase Admin SDKを初期化
-  if (admin.apps.length === 0) {
-    admin.initializeApp(adminConfig);
+  // Firebase Admin SDKを初期化（認証情報がある場合のみ）
+  if (adminConfig.credential || process.env.NODE_ENV === 'production') {
+    if (admin.apps.length === 0) {
+      admin.initializeApp(adminConfig);
+    }
+    
+    db = admin.firestore();
+    console.log("Firebase Admin SDK initialized successfully.");
+  } else {
+    console.warn("Firebase Admin SDK not initialized - no credentials provided.");
+    db = null;
   }
-  
-  db = admin.firestore();
-  console.log("Firebase Admin SDK initialized successfully.");
 } catch (error) {
   console.error("Error initializing Firebase Admin SDK:", error);
+  console.error("Application will continue without Firebase functionality.");
   console.error("Please ensure GOOGLE_APPLICATION_CREDENTIALS_JSON or GOOGLE_APPLICATION_CREDENTIALS is properly set.");
-  process.exit(1);
+  db = null;
 }
 
 // Expressの基本設定
@@ -63,17 +72,14 @@ if (process.env.NODE_ENV === 'production') {
     app.set('trust proxy', 1);
 }
 
-// セッションの設定 (FirestoreStoreを使用)
+// セッションの設定 (FirestoreStoreを使用または fallback to memory store)
 if (!process.env.SESSION_SECRET) {
     console.error("SESSION_SECRET environment variable is required");
     process.exit(1);
 }
 
-app.use(session({
-    store: new FirestoreStore({
-        dataset: db,
-        kind: 'express-sessions', // Firestoreに保存されるコレクション名
-    }),
+// Configure session store based on database availability
+let sessionConfig = {
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
@@ -83,7 +89,27 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000, // 1日
         sameSite: 'lax' // クロスドメイン問題を回避するための推奨設定
     }
-}));
+};
+
+// Use Firestore store if database is available, otherwise use memory store
+if (db) {
+    try {
+        sessionConfig.store = new FirestoreStore({
+            dataset: db,
+            kind: 'express-sessions', // Firestoreに保存されるコレクション名
+        });
+        console.log("Using Firestore session store");
+    } catch (error) {
+        console.error("Failed to initialize Firestore session store:", error);
+        console.log("Falling back to memory session store");
+        // sessionConfig.store will be undefined, which means Express will use memory store
+    }
+} else {
+    console.log("Database not available, using memory session store");
+    // sessionConfig.store will be undefined, which means Express will use memory store
+}
+
+app.use(session(sessionConfig));
 
 
 // ----------------------------------------------------------------
@@ -127,7 +153,7 @@ app.use('/profile', profileRoutes); // プロフィール関連 (/profile/edit, 
 // ----------------------------------------------------------------
 // 3.5. Health check endpoint
 // ----------------------------------------------------------------
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
     const healthStatus = {
         status: 'ok',
         timestamp: new Date().toISOString(),
@@ -135,8 +161,34 @@ app.get('/health', (req, res) => {
         environment: process.env.NODE_ENV || 'development',
         firebase: !!db,
         session: !!process.env.SESSION_SECRET,
-        ai: !!process.env.GEMINI_API_KEY
+        ai: !!process.env.GEMINI_API_KEY,
+        credentials: {
+            firebaseJson: !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON,
+            firebaseFile: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
+            projectId: !!process.env.FIREBASE_PROJECT_ID
+        }
     };
+    
+    // Test database connection if available
+    if (db) {
+        try {
+            // Simple test query with timeout
+            await Promise.race([
+                db.collection('_health_check').limit(1).get(),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Database connection timeout')), 3000)
+                )
+            ]);
+            healthStatus.databaseConnection = 'connected';
+        } catch (error) {
+            healthStatus.databaseConnection = 'failed';
+            healthStatus.databaseError = error.message;
+            healthStatus.status = 'degraded';
+        }
+    } else {
+        healthStatus.databaseConnection = 'not_configured';
+        healthStatus.status = 'degraded';
+    }
     
     res.json(healthStatus);
 });
@@ -161,9 +213,21 @@ app.get('/:possibleQuizId', async (req, res, next) => {
         return next();
     }
     
+    // Check if database is available before attempting to query
+    if (!db) {
+        console.error('Database not available for quiz ID check:', possibleQuizId);
+        // If database is not available, still redirect to quiz route and let it handle the error
+        return res.redirect(`/quiz/${encodeURIComponent(possibleQuizId)}`);
+    }
+    
     try {
-        // Check if this quiz ID exists in the database
-        const quizDoc = await db.collection('quizzes').doc(possibleQuizId).get();
+        // Add timeout for database query to prevent hanging in serverless environment
+        const quizDoc = await Promise.race([
+            db.collection('quizzes').doc(possibleQuizId).get(),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Database query timeout')), 5000)
+            )
+        ]);
         
         if (quizDoc.exists) {
             // Quiz exists, redirect to proper quiz route
@@ -182,14 +246,10 @@ app.get('/:possibleQuizId', async (req, res, next) => {
         }
     } catch (error) {
         console.error(`Error checking quiz ID ${possibleQuizId}:`, error);
-        // Database error, but since it looks like a quiz ID, show quiz-specific 404 message
-        console.log(`Database error for quiz-like ID: ${possibleQuizId}, showing quiz-specific 404`);
-        return res.status(404).render('404', {
-            title: 'クイズが見つかりません - Quiz Not Found',
-            message: 'お探しのクイズは削除されたか、URLが間違っている可能性があります。データベースエラーが発生しました。',
-            quizId: possibleQuizId,
-            user: req.session?.user || null
-        });
+        // Database error: redirect to quiz route instead of showing error page
+        // This way the quiz route can handle the proper error display
+        console.log(`Database error for quiz-like ID: ${possibleQuizId}, redirecting to quiz route`);
+        return res.redirect(`/quiz/${encodeURIComponent(possibleQuizId)}`);
     }
 });
 

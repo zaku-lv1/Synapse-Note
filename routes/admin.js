@@ -12,7 +12,16 @@ const router = express.Router();
 const admin = require('firebase-admin');
 const bcrypt = require('bcrypt');
 
-const db = admin.firestore();
+// Firestore データベースインスタンス (lazy initialization)
+function getDb() {
+    try {
+        return admin.firestore();
+    } catch (error) {
+        console.error('Firebase not initialized:', error.message);
+        return null;
+    }
+}
+
 const saltRounds = 10;
 
 // 管理者認証ミドルウェア
