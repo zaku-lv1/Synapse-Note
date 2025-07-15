@@ -17,7 +17,7 @@
             <div class="form-group">
                 <label for="username">ユーザー名</label>
                 <input type="text" id="username" name="username" required 
-                       placeholder="表示名を入力してください" maxlength="50">
+                       placeholder="表示名を入力してください" maxlength="50" autocomplete="off">
             </div>
 
             <div class="form-group">
@@ -26,7 +26,7 @@
                     <span class="handle-prefix">@</span>
                     <input type="text" id="handle" name="handle" required 
                            placeholder="ユニークなIDを入力" pattern="[a-zA-Z0-9_]+" 
-                           title="英数字とアンダースコアのみ使用可能" maxlength="30">
+                           title="英数字とアンダースコアのみ使用可能" maxlength="30" autocomplete="off">
                 </div>
                 <small class="form-hint">英数字とアンダースコア(_)のみ使用可能</small>
             </div>
@@ -34,14 +34,14 @@
             <div class="form-group">
                 <label for="password">パスワード</label>
                 <input type="password" id="password" name="password" required 
-                       placeholder="安全なパスワードを設定してください" minlength="8">
+                       placeholder="安全なパスワードを設定してください" minlength="8" autocomplete="off">
                 <small class="form-hint">8文字以上で設定してください</small>
             </div>
 
             <div class="form-group">
                 <label for="adminKey">管理者キー</label>
                 <input type="password" id="adminKey" name="adminKey" required 
-                       placeholder="管理者キーを入力してください">
+                       placeholder="管理者キーを入力してください" autocomplete="off">
                 <small class="form-hint">システム管理者から提供された管理者キーを入力</small>
             </div>
 

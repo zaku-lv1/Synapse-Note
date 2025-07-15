@@ -22,6 +22,7 @@
                 value="<%= user.username || '' %>" 
                 required
                 maxlength="50"
+                autocomplete="off"
             >
         </div>
 
@@ -46,6 +47,7 @@
                 rows="4" 
                 maxlength="500"
                 placeholder="自己紹介を入力してください..."
+                autocomplete="off"
             ><%= user.bio || '' %></textarea>
             <div class="char-counter">
                 <span id="bioCounter">0</span>/500文字
