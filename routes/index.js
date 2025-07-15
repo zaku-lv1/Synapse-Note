@@ -54,11 +54,34 @@ router.get('/my-history', requireLogin, async (req, res) => {
 router.get('/public-quizzes', async (req, res) => {
     try {
         const quizzesSnapshot = await db.collection('quizzes')
-            .where('visibility', '==', 'public')
+            .where('visibility', 'in', ['public', 'unlisted'])
             .orderBy('createdAt', 'desc')
             .limit(50)
             .get();
-        const quizzes = quizzesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Get owner information for each quiz
+        const quizzes = await Promise.all(quizzesSnapshot.docs.map(async (doc) => {
+            const quizData = doc.data();
+            let ownerHandle = null;
+            
+            if (quizData.ownerId) {
+                try {
+                    const ownerDoc = await db.collection('users').doc(quizData.ownerId).get();
+                    if (ownerDoc.exists) {
+                        ownerHandle = ownerDoc.data().handle;
+                    }
+                } catch (error) {
+                    console.error('Error fetching owner data:', error);
+                }
+            }
+            
+            return { 
+                id: doc.id, 
+                ...quizData,
+                ownerHandle: ownerHandle
+            };
+        }));
+        
         res.render('public-quizzes', { user: req.session.user, quizzes: quizzes });
     } catch (error) {
         console.error("Public Quizzes Error:", error);

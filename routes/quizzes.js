@@ -263,7 +263,7 @@ router.get('/my-quizzes', requireLogin, async (req, res) => {
 /**
  * 解答提出（下書き/保存済み 両対応, AI採点 or 自動採点）
  */
-router.post('/submit', requireLogin, async (req, res) => {
+router.post('/submit', async (req, res) => {
     try {
         const { quizId, draftQuizData, answers } = req.body;
         let quiz, isDraft = false;
@@ -275,6 +275,11 @@ router.post('/submit', requireLogin, async (req, res) => {
             const quizDoc = await db.collection('quizzes').doc(quizId).get();
             if (!quizDoc.exists) return res.status(404).send("クイズが見つかりません。");
             quiz = { id: quizDoc.id, ...quizDoc.data() };
+            
+            // アクセス権限チェック: private の場合のみログインと所有者チェックが必要
+            if (quiz.visibility === 'private' && (!req.session.user || quiz.ownerId !== req.session.user.uid)) {
+                return res.status(403).send("アクセス権限がありません。");
+            }
         }
 
         const questions = quiz.questions;
@@ -375,17 +380,20 @@ ${JSON.stringify(normalizedAnswers, null, 2)}
             };
         });
 
-        const attemptRef = db.collection('quiz_attempts').doc();
-        await attemptRef.set({
-            userId: req.session.user.uid,
-            quizId: quiz.id || null,
-            quizTitle: quiz.title,
-            totalScore, maxScore,
-            attemptedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
+        // 結果をデータベースに保存（ログインユーザーのみ）
+        if (req.session.user) {
+            const attemptRef = db.collection('quiz_attempts').doc();
+            await attemptRef.set({
+                userId: req.session.user.uid,
+                quizId: quiz.id || null,
+                quizTitle: quiz.title,
+                totalScore, maxScore,
+                attemptedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
 
         res.render('quiz-result', {
-            user: req.session.user,
+            user: req.session.user || null,
             quiz,
             results: finalResults,
             totalScore,
@@ -397,7 +405,7 @@ ${JSON.stringify(normalizedAnswers, null, 2)}
     } catch (error) {
         console.error("クイズの採点中にエラー:", error);
         res.render('solve-quiz', {
-            user: req.session.user,
+            user: req.session.user || null,
             quiz,
             isDraft,
             error: "クイズの採点に失敗しました。"
@@ -504,14 +512,17 @@ router.get('/:quizId', async (req, res) => {
         const quizDoc = await db.collection('quizzes').doc(req.params.quizId).get();
         if (!quizDoc.exists) return res.status(404).send("クイズが見つかりません。");
         const quiz = quizDoc.data();
+        
+        // アクセス権限チェック: private の場合のみログインと所有者チェックが必要
         if (quiz.visibility === 'private' && (!req.session.user || quiz.ownerId !== req.session.user.uid)) {
             return res.status(403).send("アクセス権限がありません。");
         }
-        res.render('solve-quiz', { user: req.session.user, quiz: { id: quizDoc.id, ...quiz }, isDraft: false });
+        
+        res.render('solve-quiz', { user: req.session.user || null, quiz: { id: quizDoc.id, ...quiz }, isDraft: false });
     } catch (error) {
         console.error("クイズ表示エラー:", error);
         res.render('solve-quiz', {
-            user: req.session.user,
+            user: req.session.user || null,
             quiz: null,
             isDraft: false,
             error: "クイズの表示中にエラーが発生しました。時間をおいて再度お試しください。"
