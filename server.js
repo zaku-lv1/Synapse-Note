@@ -16,16 +16,17 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Firebase Admin SDKの初期化
+let db;
 try {
   // 本番環境（Render, Fly.ioなど）では、環境変数 GOOGLE_APPLICATION_CREDENTIALS_JSON を
   // 設定することで、引数なしで初期化するのが一般的です。
   admin.initializeApp();
+  db = admin.firestore();
   console.log("Firebase Admin SDK initialized successfully.");
 } catch (error) {
   console.error("Error initializing Firebase Admin SDK:", error);
   process.exit(1);
 }
-const db = admin.firestore();
 
 // Expressの基本設定
 app.set('view engine', 'ejs');

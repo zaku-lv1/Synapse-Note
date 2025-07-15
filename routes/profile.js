@@ -12,7 +12,7 @@ const requireAuth = (req, res, next) => {
 };
 
 // 自分のプロフィール表示
-router.get('/profile', requireAuth, async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
     try {
         const userId = req.session.user.uid;
         const userDoc = await db.collection('users').doc(userId).get();
@@ -140,7 +140,7 @@ router.get('/:handle', async (req, res) => {
 });
 
 // プロフィール編集ページ
-router.get('/profile/edit', requireAuth, async (req, res) => {
+router.get('/edit', requireAuth, async (req, res) => {
     try {
         const userId = req.session.user.uid;
         const userDoc = await db.collection('users').doc(userId).get();
@@ -161,7 +161,7 @@ router.get('/profile/edit', requireAuth, async (req, res) => {
 });
 
 // プロフィール更新
-router.post('/profile/update', requireAuth, async (req, res) => {
+router.post('/update', requireAuth, async (req, res) => {
     try {
         const userId = req.session.user.uid;
         const { displayName, bio } = req.body;
