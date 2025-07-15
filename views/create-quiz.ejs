@@ -10,7 +10,7 @@
         <form action="/quiz/create" method="POST">
             <div class="form-group">
                 <label for="title">テストのタイトル（任意）</label>
-                <input type="text" id="title" name="title" placeholder="例: 期末対策！英単語テスト">
+                <input type="text" id="title" name="title" placeholder="例: 期末対策！英単語テスト" autocomplete="off">
                 <p class="form-text">入力しない場合、AIが自動でタイトルを生成します。</p>
             </div>
 
@@ -33,7 +33,7 @@
 
             <div class="form-group">
                 <label for="topic">分野・テーマ</label>
-                <input type="text" id="topic" name="topic" required placeholder="例: 不定詞、二次関数、安土桃山時代">
+                <input type="text" id="topic" name="topic" required placeholder="例: 不定詞、二次関数、安土桃山時代" autocomplete="off">
             </div>
 
             <div class="form-group">
@@ -74,7 +74,7 @@
 
             <div class="form-group">
                 <label for="example">参考情報・例文（任意）</label>
-                <textarea id="example" name="example" rows="5" placeholder="特定の単語リストや、参考にしてほしい例文などがあれば入力してください。"></textarea>
+                <textarea id="example" name="example" rows="5" placeholder="特定の単語リストや、参考にしてほしい例文などがあれば入力してください。" autocomplete="off"></textarea>
             </div>
 
             <button type="submit" class="button">問題を生成して挑戦する</button>

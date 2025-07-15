@@ -8,15 +8,15 @@
     <form id="manualQuizForm" method="POST" action="/quiz/manual-create" autocomplete="off">
       <div class="form-group">
         <label for="quiz-title">タイトル</label>
-        <input type="text" id="quiz-title" name="title" required>
+        <input type="text" id="quiz-title" name="title" required autocomplete="off">
       </div>
       <div class="form-group">
         <label for="quiz-subject">科目</label>
-        <input type="text" id="quiz-subject" name="subject" required>
+        <input type="text" id="quiz-subject" name="subject" required autocomplete="off">
       </div>
       <div class="form-group">
         <label for="quiz-difficulty">難易度</label>
-        <input type="text" id="quiz-difficulty" name="difficulty" required>
+        <input type="text" id="quiz-difficulty" name="difficulty" required autocomplete="off">
       </div>
       <hr>
       <div id="questionsArea"></div>
@@ -39,7 +39,7 @@ function renderQuestions() {
       <div class="question-editor-card" style="margin-bottom:18px;">
         <div style="display:flex; flex-wrap:wrap; gap:12px 16px;">
           <label>問題文
-            <input type="text" value="${escapeHtml(q.question || '')}" onchange="updateQuestion(${i}, 'question', this.value)">
+            <input type="text" value="${escapeHtml(q.question || '')}" onchange="updateQuestion(${i}, 'question', this.value)" autocomplete="off">
           </label>
           <label>タイプ
             <select onchange="updateQuestion(${i}, 'type', this.value)">
@@ -49,12 +49,12 @@ function renderQuestions() {
             </select>
           </label>
           <label>配点
-            <input type="number" min="1" value="${Number(q.points)||10}" onchange="updateQuestion(${i}, 'points', this.value)">
+            <input type="number" min="1" value="${Number(q.points)||10}" onchange="updateQuestion(${i}, 'points', this.value)" autocomplete="off">
           </label>
         </div>
         ${(q.type === 'multiple_choice') ? renderOptions(i, q) : ''}
         <label>正解
-          <input type="text" value="${escapeHtml(q.answer||'')}" onchange="updateQuestion(${i}, 'answer', this.value)">
+          <input type="text" value="${escapeHtml(q.answer||'')}" onchange="updateQuestion(${i}, 'answer', this.value)" autocomplete="off">
         </label>
         <button type="button" class="mc-btn delete-question-btn" onclick="removeQuestion(${i})">この問題を削除</button>
       </div>
@@ -69,7 +69,7 @@ function renderOptions(idx, q) {
   (q.options||["",""]).forEach((opt,j)=> {
     rows += `
       <div class="options-area-row">
-        <input type="text" value="${escapeHtml(opt)}" onchange="updateOption(${idx},${j},this.value)">
+        <input type="text" value="${escapeHtml(opt)}" onchange="updateOption(${idx},${j},this.value)" autocomplete="off">
         <button type="button" class="mc-btn remove-option-btn" onclick="removeOption(${idx},${j})">× 削除</button>
       </div>
     `;
