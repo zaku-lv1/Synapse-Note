@@ -142,7 +142,52 @@ app.get('/health', (req, res) => {
 });
 
 // ----------------------------------------------------------------
-// 3.6. 404 Not Found ハンドラー (最後に配置)
+// 3.6. Quiz ID Catch-all Handler (before 404 handler)
+// ----------------------------------------------------------------
+// Handle direct quiz ID access (e.g., /kix1::c4hj6-1752593023673-052bf7d40ab6)
+// and redirect to proper quiz route format (/quiz/:quizId)
+app.get('/:possibleQuizId', async (req, res, next) => {
+    const possibleQuizId = req.params.possibleQuizId;
+    
+    // Check if this looks like a quiz ID pattern
+    // Quiz IDs often contain colons, dashes, alphanumeric characters
+    // Pattern: must contain :: OR be a long string with dashes (but not common page names)
+    // We'll be more liberal and let the database check do the real validation
+    const knownPages = ['dashboard', 'login', 'register', 'logout', 'my-quizzes', 'create-quiz', 'public-quizzes', 'my-history', 'profile', 'admin', 'health'];
+    const quizIdPattern = /^[a-zA-Z0-9]+::|[a-zA-Z0-9\-]{10,}$/;
+    
+    if (knownPages.includes(possibleQuizId.toLowerCase()) || !quizIdPattern.test(possibleQuizId)) {
+        // It's a known page or doesn't match quiz ID pattern, continue to 404 handler
+        return next();
+    }
+    
+    try {
+        // Check if this quiz ID exists in the database
+        const quizDoc = await db.collection('quizzes').doc(possibleQuizId).get();
+        
+        if (quizDoc.exists) {
+            // Quiz exists, redirect to proper quiz route
+            console.log(`Redirecting quiz access from /${possibleQuizId} to /quiz/${possibleQuizId}`);
+            return res.redirect(`/quiz/${encodeURIComponent(possibleQuizId)}`);
+        } else {
+            // Quiz doesn't exist, but it looks like a quiz ID format
+            // Render a specific error page for missing quizzes
+            console.log(`Quiz not found: ${possibleQuizId}`);
+            return res.status(404).render('404', {
+                title: 'クイズが見つかりません - Quiz Not Found',
+                message: 'お探しのクイズは削除されたか、URLが間違っている可能性があります。',
+                quizId: possibleQuizId
+            });
+        }
+    } catch (error) {
+        console.error(`Error checking quiz ID ${possibleQuizId}:`, error);
+        // Database error, continue to general 404 handler
+        return next();
+    }
+});
+
+// ----------------------------------------------------------------
+// 3.7. 404 Not Found ハンドラー (最後に配置)
 // ----------------------------------------------------------------
 // 全てのルートに一致しなかった場合の404エラーハンドラ
 app.use((req, res) => {

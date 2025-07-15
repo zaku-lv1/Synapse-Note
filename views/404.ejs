@@ -9,9 +9,21 @@
                 <span class="four">4</span>
             </div>
         </div>
-        <h1 class="not-found-title">ページが見つかりません</h1>
+        <h1 class="not-found-title">
+            <% if (typeof quizId !== 'undefined') { %>
+                クイズが見つかりません
+            <% } else { %>
+                ページが見つかりません
+            <% } %>
+        </h1>
         <p class="not-found-message">
-            お探しのページは削除されたか、URLが間違っている可能性があります。
+            <% if (typeof quizId !== 'undefined') { %>
+                お探しのクイズ (ID: <%= quizId %>) は削除されたか、URLが間違っている可能性があります。
+            <% } else if (typeof message !== 'undefined') { %>
+                <%= message %>
+            <% } else { %>
+                お探しのページは削除されたか、URLが間違っている可能性があります。
+            <% } %>
         </p>
         <div class="not-found-actions">
             <a href="/" class="btn btn-primary">ホームに戻る</a>
@@ -19,13 +31,25 @@
         </div>
         
         <div class="helpful-links">
-            <h3>お探しのページはこちらですか？</h3>
-            <ul class="link-list">
-                <li><a href="/dashboard">ダッシュボード</a></li>
-                <li><a href="/quiz/create-quiz">クイズ作成</a></li>
-                <li><a href="/my-quizzes">マイクイズ</a></li>
-                <li><a href="/profile">プロフィール</a></li>
-            </ul>
+            <% if (typeof quizId !== 'undefined') { %>
+                <h3>クイズをお探しですか？</h3>
+                <ul class="link-list">
+                    <li><a href="/public-quizzes">公開クイズ一覧</a></li>
+                    <li><a href="/quiz/create">新しいクイズを作成</a></li>
+                    <% if (user) { %>
+                        <li><a href="/quiz/my-quizzes">マイクイズ</a></li>
+                        <li><a href="/my-history">挑戦履歴</a></li>
+                    <% } %>
+                </ul>
+            <% } else { %>
+                <h3>お探しのページはこちらですか？</h3>
+                <ul class="link-list">
+                    <li><a href="/dashboard">ダッシュボード</a></li>
+                    <li><a href="/quiz/create-quiz">クイズ作成</a></li>
+                    <li><a href="/my-quizzes">マイクイズ</a></li>
+                    <li><a href="/profile">プロフィール</a></li>
+                </ul>
+            <% } %>
         </div>
     </div>
 </div>
