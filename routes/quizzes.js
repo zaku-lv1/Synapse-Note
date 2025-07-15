@@ -15,8 +15,15 @@ const multer = require('multer');
 
 // --- Firebase/AI初期化 ---
 const db = admin.firestore();
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+// Gemini API初期化（APIキーの存在確認）
+let genAI, model;
+if (process.env.GEMINI_API_KEY) {
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+} else {
+    console.warn("GEMINI_API_KEY not set - AI quiz generation will be unavailable");
+}
 
 // --- Multer: 画像ファイルはメモリに一時保存 ---
 const storage = multer.memoryStorage();

@@ -7,7 +7,14 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 // --- 1. 初期設定 ---
 const db = admin.firestore();
 const saltRounds = 10;
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// Gemini API初期化（APIキーの存在確認）
+let genAI;
+if (process.env.GEMINI_API_KEY) {
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+} else {
+    console.warn("GEMINI_API_KEY not set - AI features will be unavailable");
+}
 
 // --- 2. 認証ミドルウェア ---
 function requireLogin(req, res, next) {
