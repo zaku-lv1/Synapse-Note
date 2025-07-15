@@ -30,6 +30,9 @@
             <nav class="main-nav">
                 <% if (typeof user !== 'undefined' && user) { %>
                     <span><a href="/profile"><%= user.username %></a></span>
+                    <% if (user.isAdmin) { %>
+                    <a href="/admin" class="admin-link">管理者</a>
+                    <% } %>
                     <a href="/public-quizzes">公開テスト</a>
                     <a href="/quiz/my-quizzes">作成一覧</a>
                     <a href="/my-history">挑戦履歴</a>
