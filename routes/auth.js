@@ -246,4 +246,9 @@ router.post('/setup-admin', async (req, res) => {
     }
 });
 
+// Demo route for admin setup
+router.get('/admin-demo', (req, res) => {
+    res.render('admin-demo', { user: req.session.user });
+});
+
 module.exports = router;
