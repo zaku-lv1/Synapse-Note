@@ -81,9 +81,24 @@ router.post('/login', async (req, res) => {
 router.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
+            console.error('Session destroy error:', err);
             return res.redirect('/dashboard');
         }
-        res.clearCookie('connect.sid');
+        // より確実にクッキーをクリア
+        res.clearCookie('connect.sid', {
+            path: '/',
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax'
+        });
+        
+        // キャッシュを無効にするヘッダーを追加
+        res.set({
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        });
+        
         res.redirect('/');
     });
 });

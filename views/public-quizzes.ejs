@@ -15,7 +15,13 @@
                         <div class="quiz-meta">
                             <span class="meta-item">科目: <%= quiz.subject %></span>
                             <span class="meta-item">学年: <%= quiz.difficulty %></span>
-                            <span class="meta-item">作成者: <%= quiz.ownerUsername %></span>
+                            <span class="meta-item">作成者: 
+                                <% if (quiz.ownerHandle) { %>
+                                    <a href="/profile/<%= quiz.ownerHandle.replace('@', '') %>"><%= quiz.ownerUsername %></a>
+                                <% } else { %>
+                                    <%= quiz.ownerUsername %>
+                                <% } %>
+                            </span>
                         </div>
                     </div>
                     <div class="quiz-actions">
