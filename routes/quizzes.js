@@ -317,7 +317,8 @@ router.post('/submit', async (req, res) => {
             quiz = { id: quizDoc.id, ...quizDoc.data() };
             
             // アクセス権限チェック: private の場合のみログインと所有者チェックが必要
-            if (quiz.visibility === 'private' && (!req.session.user || quiz.ownerId !== req.session.user.uid)) {
+            // 管理者は全てのクイズにアクセス可能
+            if (quiz.visibility === 'private' && (!req.session.user || (quiz.ownerId !== req.session.user.uid && !req.session.user.isAdmin))) {
                 return res.status(403).send("アクセス権限がありません。");
             }
         }
@@ -503,7 +504,7 @@ router.get('/:quizId/edit', requireLogin, async (req, res) => {
         const quizDoc = await db.collection('quizzes').doc(req.params.quizId).get();
         if (!quizDoc.exists) return res.status(404).send("クイズが見つかりません。");
         const quiz = quizDoc.data();
-        if (quiz.ownerId !== req.session.user.uid) return res.status(403).send("編集権限がありません。");
+        if (quiz.ownerId !== req.session.user.uid && !req.session.user.isAdmin) return res.status(403).send("編集権限がありません。");
         res.render('edit-quiz', { user: req.session.user, quiz: { id: quizDoc.id, ...quiz } });
     } catch (error) {
         console.error("編集ページ表示エラー:", error);
@@ -524,7 +525,7 @@ router.post('/:quizId/edit', requireLogin, async (req, res) => {
         const { title, visibility, questions } = req.body;
         const quizRef = db.collection('quizzes').doc(req.params.quizId);
         const doc = await quizRef.get();
-        if (!doc.exists || doc.data().ownerId !== req.session.user.uid) return res.status(403).send("編集権限がありません。");
+        if (!doc.exists || (doc.data().ownerId !== req.session.user.uid && !req.session.user.isAdmin)) return res.status(403).send("編集権限がありません。");
 
         const updatedQuestions = questions.map(q => ({ ...q, points: parseInt(q.points, 10) || 0 }));
         await quizRef.update({
@@ -600,7 +601,8 @@ router.get('/:quizId', async (req, res) => {
         const quiz = quizDoc.data();
         
         // アクセス権限チェック: private の場合のみログインと所有者チェックが必要
-        if (quiz.visibility === 'private' && (!req.session.user || quiz.ownerId !== req.session.user.uid)) {
+        // 管理者は全てのクイズにアクセス可能
+        if (quiz.visibility === 'private' && (!req.session.user || (quiz.ownerId !== req.session.user.uid && !req.session.user.isAdmin))) {
             return res.status(403).render('404', {
                 title: 'アクセス権限がありません - Access Denied',
                 message: 'このクイズにアクセスする権限がありません。',
