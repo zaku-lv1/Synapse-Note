@@ -166,7 +166,7 @@ app.get('/:possibleQuizId', async (req, res, next) => {
     // Quiz IDs often contain colons, dashes, alphanumeric characters
     // Pattern: must contain :: OR be a very long string with dashes (but not common page names)
     // We'll be more strict to avoid false positives
-    const knownPages = ['dashboard', 'login', 'register', 'logout', 'my-quizzes', 'create-quiz', 'public-quizzes', 'my-history', 'profile', 'admin', 'health', 'nonexistent-page'];
+    const knownPages = ['dashboard', 'login', 'register', 'logout', 'my-quizzes', 'create-quiz', 'public-quizzes', 'my-history', 'profile', 'admin', 'nonexistent-page'];
     const quizIdPattern = /^[a-zA-Z0-9]+::|^[a-zA-Z0-9]+-[0-9]{10,}-[a-zA-Z0-9]+$/;
     
     if (knownPages.includes(possibleQuizId.toLowerCase()) || !quizIdPattern.test(possibleQuizId)) {
