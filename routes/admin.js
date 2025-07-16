@@ -310,4 +310,70 @@ router.post('/quizzes/:quizId/delete', requireAdmin, async (req, res) => {
     }
 });
 
+// ユーザー削除
+router.post('/users/:userId/delete', requireAdmin, async (req, res) => {
+    try {
+        const db = getDb();
+        if (!db) {
+            return res.redirect('/admin/users?error=データベースに接続できません。');
+        }
+
+        const userId = req.params.userId;
+        
+        // 自分自身は削除できない
+        if (userId === req.session.user.uid) {
+            return res.redirect('/admin/users?error=自分自身のアカウントは削除できません。');
+        }
+
+        // ユーザーが存在するか確認
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (!userDoc.exists) {
+            return res.redirect('/admin/users?error=指定されたユーザーが見つかりません。');
+        }
+
+        const userData = userDoc.data();
+        
+        // ユーザーに関連するデータを削除
+        const batch = db.batch();
+        
+        // ユーザーが作成したクイズを削除
+        const userQuizzesSnapshot = await db.collection('quizzes')
+            .where('ownerId', '==', userId)
+            .get();
+        
+        // 各クイズに関連するattempts も削除
+        for (const quizDoc of userQuizzesSnapshot.docs) {
+            const quizId = quizDoc.id;
+            const attemptsSnapshot = await db.collection('quiz_attempts')
+                .where('quizId', '==', quizId)
+                .get();
+            
+            attemptsSnapshot.docs.forEach(attemptDoc => {
+                batch.delete(attemptDoc.ref);
+            });
+            
+            batch.delete(quizDoc.ref);
+        }
+        
+        // ユーザーのクイズ試行履歴を削除
+        const userAttemptsSnapshot = await db.collection('quiz_attempts')
+            .where('userId', '==', userId)
+            .get();
+        
+        userAttemptsSnapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        
+        // ユーザー自体を削除
+        batch.delete(db.collection('users').doc(userId));
+        
+        await batch.commit();
+
+        res.redirect('/admin/users?message=ユーザー「' + userData.username + '」を削除しました。');
+    } catch (error) {
+        console.error("User deletion error:", error);
+        res.redirect('/admin/users?error=ユーザーの削除中にエラーが発生しました。');
+    }
+});
+
 module.exports = router;

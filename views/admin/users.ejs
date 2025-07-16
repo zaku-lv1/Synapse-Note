@@ -73,6 +73,14 @@
                             <% } else { %>
                             <span class="current-user">あなた</span>
                             <% } %>
+                            
+                            <% if (userItem.id !== user.uid) { %>
+                            <form method="POST" action="/admin/users/<%= userItem.id %>/delete" 
+                                  onsubmit="return confirm('⚠️ 警告: ユーザー「<%= userItem.username %>」とそのすべてのデータ（作成したクイズ、試行履歴など）を完全に削除します。\n\nこの操作は取り消すことができません。\n\n本当に削除しますか？')" 
+                                  style="display: inline;">
+                                <button type="submit" class="btn btn-delete">アカウント削除</button>
+                            </form>
+                            <% } %>
                         </td>
                     </tr>
                     <% }); %>
@@ -239,6 +247,17 @@
     background: #c82333;
 }
 
+.btn-delete {
+    background: #dc3545;
+    color: white;
+    border: 1px solid #dc3545;
+}
+
+.btn-delete:hover {
+    background: #c82333;
+    border-color: #bd2130;
+}
+
 .btn-secondary {
     background: #6c757d;
     color: white;
@@ -268,6 +287,11 @@
     .action-buttons {
         flex-direction: column;
         gap: 4px;
+    }
+    
+    .btn {
+        font-size: 0.8em;
+        padding: 4px 8px;
     }
 }
 </style>
