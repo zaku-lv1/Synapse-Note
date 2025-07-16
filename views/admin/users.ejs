@@ -26,7 +26,8 @@
             <h3>ユーザー一覧 (<%= users.length %>人)</h3>
         </div>
 
-        <div class="table-responsive">
+        <!-- デスクトップ用テーブル表示 -->
+        <div class="table-responsive desktop-table">
             <table class="users-table">
                 <thead>
                     <tr>
@@ -86,6 +87,69 @@
                     <% }); %>
                 </tbody>
             </table>
+        </div>
+
+        <!-- モバイル用カード表示 -->
+        <div class="mobile-cards">
+            <% users.forEach(userItem => { %>
+            <div class="user-card">
+                <div class="user-card-header">
+                    <div class="user-main-info">
+                        <h4 class="username"><%= userItem.username %></h4>
+                        <p class="handle"><%= userItem.handle %></p>
+                    </div>
+                    <div class="user-role">
+                        <span class="role-badge <%= userItem.isAdmin ? 'admin' : 'user' %>">
+                            <%= userItem.isAdmin ? '管理者' : '一般ユーザー' %>
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="user-card-info">
+                    <div class="info-item">
+                        <span class="info-label">登録日:</span>
+                        <span class="info-value">
+                            <%= new Date(userItem.createdAt.seconds * 1000).toLocaleDateString('ja-JP') %>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="user-card-actions">
+                    <% if (!userItem.isAdmin) { %>
+                    <form method="POST" action="/admin/users/<%= userItem.id %>/promote" 
+                          onsubmit="return confirm('このユーザーを管理者に昇格させますか？')">
+                        <button type="submit" class="btn btn-promote mobile-btn">
+                            <span class="btn-icon">⬆️</span>
+                            <span class="btn-text">管理者に昇格</span>
+                        </button>
+                    </form>
+                    <% } else if (userItem.id !== user.uid) { %>
+                    <form method="POST" action="/admin/users/<%= userItem.id %>/demote" 
+                          onsubmit="return confirm('このユーザーの管理者権限を取り消しますか？')">
+                        <button type="submit" class="btn btn-demote mobile-btn">
+                            <span class="btn-icon">⬇️</span>
+                            <span class="btn-text">権限取り消し</span>
+                        </button>
+                    </form>
+                    <% } else { %>
+                    <div class="current-user-indicator">
+                        <span class="btn-icon">👤</span>
+                        <span class="btn-text">あなた</span>
+                    </div>
+                    <% } %>
+                    
+                    <% if (userItem.id !== user.uid) { %>
+                    <form method="POST" action="/admin/users/<%= userItem.id %>/delete" 
+                          onsubmit="return confirm('⚠️ 警告: ユーザー「<%= userItem.username %>」とそのすべてのデータ（作成したクイズ、試行履歴など）を完全に削除します。\n\nこの操作は取り消すことができません。\n\n本当に削除しますか？')">
+                        <button type="submit" class="btn btn-delete mobile-btn">
+                            <span class="btn-icon">🗑️</span>
+                            <span class="btn-text">アカウント削除</span>
+                        </button>
+                    </form>
+                    <% } %>
+                </div>
+            </div>
+            <% }); %>
         </div>
     </div>
 
@@ -277,7 +341,205 @@
     text-align: center;
 }
 
+/* Mobile card layout styles */
+.mobile-cards {
+    display: none;
+}
+
+.desktop-table {
+    display: block;
+}
+
+.user-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+}
+
+.user-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    gap: 12px;
+}
+
+.user-main-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-main-info .username {
+    margin: 0 0 4px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #333;
+    word-wrap: break-word;
+}
+
+.user-main-info .handle {
+    margin: 0;
+    color: #666;
+    font-size: 0.9em;
+    word-wrap: break-word;
+}
+
+.user-role {
+    flex-shrink: 0;
+}
+
+.user-card-info {
+    margin-bottom: 20px;
+    padding: 12px 0;
+    border-top: 1px solid #f1f3f4;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.info-label {
+    font-weight: 500;
+    color: #666;
+    font-size: 0.9em;
+    flex-shrink: 0;
+}
+
+.info-value {
+    color: #333;
+    font-size: 0.9em;
+    text-align: right;
+}
+
+.user-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mobile-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    font-weight: 500;
+    min-height: 44px; /* iOS recommended touch target */
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-icon {
+    font-size: 1.1em;
+    flex-shrink: 0;
+}
+
+.btn-text {
+    flex: 1;
+    text-align: center;
+}
+
+.current-user-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    color: #666;
+    border-radius: 8px;
+    font-style: italic;
+    font-size: 0.9em;
+    min-height: 44px;
+}
+
+/* Mobile responsive styles */
 @media (max-width: 768px) {
+    .admin-container {
+        padding: 16px;
+    }
+    
+    .desktop-table {
+        display: none;
+    }
+    
+    .mobile-cards {
+        display: block;
+    }
+    
+    .admin-header {
+        margin-bottom: 24px;
+    }
+    
+    .admin-header .page-title {
+        font-size: 1.5em;
+    }
+    
+    .breadcrumb {
+        font-size: 0.85em;
+    }
+    
+    .users-table-container {
+        margin-bottom: 24px;
+    }
+    
+    .table-header {
+        padding: 16px;
+    }
+    
+    .table-header h3 {
+        font-size: 1.1em;
+    }
+    
+    /* Button color overrides for mobile */
+    .mobile-btn.btn-promote {
+        background: #28a745;
+        color: white;
+    }
+    
+    .mobile-btn.btn-promote:hover {
+        background: #218838;
+    }
+    
+    .mobile-btn.btn-demote {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .mobile-btn.btn-demote:hover {
+        background: #c82333;
+    }
+    
+    .mobile-btn.btn-delete {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .mobile-btn.btn-delete:hover {
+        background: #c82333;
+    }
+    
+    /* Improve role badges on mobile */
+    .role-badge {
+        font-size: 0.8em;
+        padding: 4px 8px;
+        white-space: nowrap;
+    }
+}
+
+/* Keep existing styles for desktop */
+@media (min-width: 769px) {
     .users-table th,
     .users-table td {
         padding: 12px 8px;
