@@ -366,4 +366,16 @@ router.get('/admin-demo-quizzes', (req, res) => {
     res.render('admin/quizzes', { user: mockUser, quizzes: mockQuizzes });
 });
 
+// Demo route for testing admin settings page
+router.get('/admin-demo-settings', (req, res) => {
+    const mockUser = { username: 'テストユーザー', uid: 'test-uid', isAdmin: true };
+    const mockSettings = { 
+        allowRegistration: true, 
+        maintenanceMode: false, 
+        registrationMessage: 'システムへようこそ！新規ユーザーの登録を受け付けております。',
+        autoCleanupEnabled: true 
+    };
+    res.render('admin/settings', { user: mockUser, settings: mockSettings, message: null });
+});
+
 module.exports = router;
