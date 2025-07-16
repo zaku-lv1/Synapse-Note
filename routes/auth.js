@@ -64,6 +64,15 @@ router.get('/login', (req, res) => {
 // --- 機能ルート ---
 router.post('/register', async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.render('register', { 
+                error: 'データベースに接続できません。', 
+                user: req.session.user,
+                registrationMessage: ''
+            });
+        }
+
         // システム設定を確認
         const settingsDoc = await db.collection('system_settings').doc('general').get();
         const settings = settingsDoc.exists ? settingsDoc.data() : { allowRegistration: true };
@@ -122,6 +131,14 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.render('login', { 
+                error: 'データベースに接続できません。', 
+                user: req.session.user 
+            });
+        }
+
         const { handle, password } = req.body;
         const handleWithAt = handle.startsWith('@') ? handle : '@' + handle;
         const snapshot = await db.collection('users').where('handle', '==', handleWithAt).limit(1).get();
@@ -181,6 +198,14 @@ router.get('/logout', (req, res) => {
 // --- 初回管理者登録 (セキュリティ重要) ---
 router.get('/setup-admin', async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         // 既に管理者が存在するかチェック
         const adminSnapshot = await db.collection('users').where('isAdmin', '==', true).limit(1).get();
         
@@ -203,6 +228,14 @@ router.get('/setup-admin', async (req, res) => {
 
 router.post('/setup-admin', async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         // 既に管理者が存在するかチェック
         const adminSnapshot = await db.collection('users').where('isAdmin', '==', true).limit(1).get();
         

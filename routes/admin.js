@@ -41,6 +41,14 @@ function requireAdmin(req, res, next) {
 // 管理者ダッシュボード
 router.get('/', requireAdmin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         // 統計情報を取得
         const usersSnapshot = await db.collection('users').get();
         const quizzesSnapshot = await db.collection('quizzes').get();
@@ -74,6 +82,14 @@ router.get('/', requireAdmin, async (req, res) => {
 // ユーザー管理ページ
 router.get('/users', requireAdmin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         const usersSnapshot = await db.collection('users').orderBy('createdAt', 'desc').get();
         const users = usersSnapshot.docs.map(doc => ({
             id: doc.id,
