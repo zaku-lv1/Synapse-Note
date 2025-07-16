@@ -145,55 +145,14 @@ app.get('/', (req, res) => {
 //    より具体的なパス（/quiz）を先に記述するのがベストプラクティスです。
 app.use('/api', apiRoutes);      // API関連 (/api/public/stats, /api/user/profile など)
 app.use('/admin', adminRoutes);   // 管理者関連 (/admin/users, /admin/quizzes など)
-app.use('/quiz', quizRoutes); // クイズ関連 (/quiz/create-quiz など)
+app.use('/quiz', quizRoutes); // クイズ関連 (/quiz/manual-create, /quiz/create-from-image など)
 app.use('/', authRoutes);      // 認証関連 (/login, /register, /logout)
 app.use('/', indexRoutes);     // その他 (/dashboard, /my-history など)
 app.use('/profile', profileRoutes); // プロフィール関連 (/profile/edit, /profile/view など)
 
 // ★★★ ここまでが修正点 ★★★
 
-// ----------------------------------------------------------------
-// 3.5. Health check endpoint
-// ----------------------------------------------------------------
-app.get('/health', async (req, res) => {
-    const healthStatus = {
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        version: require('./package.json').version,
-        environment: process.env.NODE_ENV || 'development',
-        firebase: !!db,
-        session: !!process.env.SESSION_SECRET,
-        ai: !!process.env.GEMINI_API_KEY,
-        credentials: {
-            firebaseJson: !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON,
-            firebaseFile: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
-            projectId: !!process.env.FIREBASE_PROJECT_ID
-        }
-    };
-    
-    // Test database connection if available
-    if (db) {
-        try {
-            // Simple test query with timeout
-            await Promise.race([
-                db.collection('_health_check').limit(1).get(),
-                new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Database connection timeout')), 3000)
-                )
-            ]);
-            healthStatus.databaseConnection = 'connected';
-        } catch (error) {
-            healthStatus.databaseConnection = 'failed';
-            healthStatus.databaseError = error.message;
-            healthStatus.status = 'degraded';
-        }
-    } else {
-        healthStatus.databaseConnection = 'not_configured';
-        healthStatus.status = 'degraded';
-    }
-    
-    res.json(healthStatus);
-});
+
 
 // ----------------------------------------------------------------
 // 3.6. Quiz ID Catch-all Handler (before 404 handler)

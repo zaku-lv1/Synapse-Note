@@ -168,58 +168,7 @@ ${JSON.stringify(initialQuestions, null, 2)}
 
 // ===================== テキスト入力からクイズ作成（AI利用） =====================
 
-/**
- * テキストからクイズ作成ページ
- */
-router.get('/create', requireLogin, (req, res) => {
-    res.render('create-quiz', { user: req.session.user });
-});
 
-/**
- * テキストからクイズ自動生成
- */
-router.post('/create', requireLogin, async (req, res) => {
-    try {
-        const { title, subject, topic, difficulty, num_questions, example } = req.body;
-        const prompt = `あなたは、システムの制約を深く理解している、極めて優秀な教育専門AIです。
-# 作成条件
-- 科目: ${subject}
-- 分野・テーマ: ${topic}
-- 対象学年（目安）: ${difficulty}
-- 問題数: 約${num_questions}問
-- 参考情報: ${example || '特になし'}
-# 絶対的な指示
-1. **最重要：解答形式の制約を厳守すること。** 解答方法は「選択肢を選ぶ」「短い単語/数式をテキスト入力する」「文章を記述する」の3種類のみです。作図や描画が必要な問題は絶対に出題しないでください。
-2. 数学・英語において参考情報がある場合は参考情報の形式の問題を多く出題してください。難易度も参考情報をもとにしてください。
-3. 問題形式は「選択式(multiple_choice)」「短答式(short_answer)」「記述式(descriptive)」を、テーマに応じて最も効果的な配分で組み合わせてください。
-4. 各問題に、難易度に応じた配点(points)を割り振ってください。
-5. 問題文は、他の問題文や選択肢から答えが推測できないように設計してください。
-6. 問題の重複を避けるため、同じ単語を問う問題は一つのテスト内で作成しないでください。
-7. 解答設定の徹底: 全ての問題に、必ず正解の答えを設定してください。設定漏れは絶対にしません。
-8. 解答と問題を見て、その問題・答えがあっているか再度確認し、間違っていたら必ず修正してください。
-9. **必ず、以下のJSON形式の配列のみを返してください。** 前後に説明文や\`\`\`jsonは絶対に含めないでください。
-# JSON出力形式 (解説は不要)
-[{"type": "multiple_choice", "question": "問題文", "options": ["選択肢1", "選択肢2"], "answer": "正解の文字列", "points": 10}]`;
-
-        const result = await model.generateContent(prompt);
-        const jsonText = result.response.text().match(/\[[\s\S]*\]/)[0];
-        const questions = JSON.parse(jsonText);
-
-        const draftQuiz = {
-            title: title && title.trim() !== '' ? title.trim() : `${topic}のテスト`,
-            subject, difficulty, questions,
-            visibility: 'private',
-            author: req.session.user.username,
-            ownerId: req.session.user.uid,
-        };
-
-        res.render('solve-quiz', { user: req.session.user, quiz: draftQuiz, isDraft: true });
-
-    } catch (error) {
-        console.error("クイズの作成中にエラー:", error);
-        res.render('create-quiz', { user: req.session.user, error: "問題の作成に失敗しました。AIの応答が不正か、通信エラーの可能性があります。時間をおいてもう一度お試しください。", old: req.body});
-    }
-});
 
 // ===================== 手動でクイズ作成（AI不使用） =====================
 
