@@ -88,6 +88,7 @@ main {
   flex: 1 0 auto;                      /* フレックスレイアウトで適切に拡張 */
   width: 100%;
   padding: var(--container-padding);   /* 流動的なパディング */
+  padding-bottom: clamp(2rem, 5vw, 3rem); /* フッターとの間隔を確保 */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -199,6 +200,8 @@ footer {
   width: 100%;
   flex-shrink: 0;
   border-top: 1px solid var(--border-color);
+  /* フッターがコンテンツに重ならないよう安全なマージンを追加 */
+  margin-top: clamp(2rem, 4vw, 3rem);
 }
 
 /* -----------------------------------------------------------------
