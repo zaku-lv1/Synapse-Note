@@ -105,7 +105,8 @@ router.post('/register', async (req, res) => {
             handle: fullHandle,
             password: hashedPassword,
             isAdmin: false, // デフォルトは一般ユーザー
-            createdAt: new Date()
+            createdAt: new Date(),
+            lastActivityAt: new Date()
         };
         // 注意: newUser オブジェクトにはIDを含めず、setする
         await userRef.set(newUser);
@@ -154,6 +155,11 @@ router.post('/login', async (req, res) => {
         if (!validPassword) {
             return res.render('login', { error: 'ハンドル名またはパスワードが正しくありません。', user: req.session.user });
         }
+        
+        // ログイン成功時にlastActivityAtを更新
+        await userDoc.ref.update({
+            lastActivityAt: new Date()
+        });
         
         // セッションには userDoc.id を使う
         req.session.user = { 
@@ -274,6 +280,7 @@ router.post('/setup-admin', async (req, res) => {
             password: hashedPassword,
             isAdmin: true,
             createdAt: new Date(),
+            lastActivityAt: new Date(),
             setupDate: new Date()
         };
         

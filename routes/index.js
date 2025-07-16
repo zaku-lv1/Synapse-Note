@@ -39,8 +39,30 @@ function requireLogin(req, res, next) {
     if (!req.session.user) {
         return res.redirect('/login');
     }
+    
+    // ユーザーのアクティビティを更新（非同期で実行、エラーがあっても処理を続行）
+    updateUserActivity(req.session.user.uid);
+    
     // 認証済みの場合は次のミドルウェアに進む
     next();
+}
+
+/**
+ * ユーザーのアクティビティ時刻を更新
+ * @param {string} userId - ユーザーID
+ */
+async function updateUserActivity(userId) {
+    try {
+        const db = getDb();
+        if (db && userId) {
+            await db.collection('users').doc(userId).update({
+                lastActivityAt: new Date()
+            });
+        }
+    } catch (error) {
+        // アクティビティ更新のエラーはログに記録するだけで、アプリケーションの動作は妨げない
+        console.error('Error updating user activity:', error);
+    }
 }
 
 /**
