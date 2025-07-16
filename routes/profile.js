@@ -23,6 +23,14 @@ const requireAuth = (req, res, next) => {
 // 自分のプロフィール表示
 router.get('/', requireAuth, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         const userId = req.session.user.uid;
         const userDoc = await db.collection('users').doc(userId).get();
         
@@ -78,6 +86,14 @@ router.get('/', requireAuth, async (req, res) => {
 // プロフィール編集ページ
 router.get('/edit', requireAuth, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         const userId = req.session.user.uid;
         const userDoc = await db.collection('users').doc(userId).get();
         
@@ -99,6 +115,14 @@ router.get('/edit', requireAuth, async (req, res) => {
 // ハンドルによる他のユーザーのプロフィール表示
 router.get('/:handle', async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         let handle = req.params.handle;
         
         // @が付いていない場合は付ける
@@ -172,6 +196,14 @@ router.get('/:handle', async (req, res) => {
 // プロフィール更新
 router.post('/update', requireAuth, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         const userId = req.session.user.uid;
         const { displayName, bio } = req.body;
         

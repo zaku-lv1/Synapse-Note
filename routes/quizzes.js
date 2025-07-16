@@ -235,6 +235,14 @@ router.get('/manual-create', requireLogin, (req, res) => {
  */
 router.post('/manual-create', requireLogin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         const { title, subject, difficulty, questions } = req.body;
         // questionsはJSON文字列 → パース
         const questionsArr = JSON.parse(questions);
@@ -268,6 +276,14 @@ router.post('/manual-create', requireLogin, async (req, res) => {
  */
 router.get('/my-quizzes', requireLogin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         const quizzesSnapshot = await db.collection('quizzes').where('ownerId', '==', req.session.user.uid).orderBy('createdAt', 'desc').get();
         const quizzes = quizzesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() }));
         res.render('my-quizzes', { user: req.session.user, quizzes: quizzes });
@@ -291,6 +307,11 @@ router.post('/submit', async (req, res) => {
             quiz = JSON.parse(draftQuizData);
             isDraft = true;
         } else {
+            const db = getDb();
+            if (!db) {
+                return res.status(500).send("データベースに接続できません。");
+            }
+
             const quizDoc = await db.collection('quizzes').doc(quizId).get();
             if (!quizDoc.exists) return res.status(404).send("クイズが見つかりません。");
             quiz = { id: quizDoc.id, ...quizDoc.data() };
@@ -439,6 +460,11 @@ ${JSON.stringify(normalizedAnswers, null, 2)}
  */
 router.post('/save-draft', requireLogin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).send("データベースに接続できません。");
+        }
+
         const { quizData } = req.body;
         if (!quizData) throw new Error('保存するクイズデータが見つかりません。');
         const quiz = JSON.parse(quizData);
@@ -469,6 +495,11 @@ router.post('/save-draft', requireLogin, async (req, res) => {
  */
 router.get('/:quizId/edit', requireLogin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).send("データベースに接続できません。");
+        }
+
         const quizDoc = await db.collection('quizzes').doc(req.params.quizId).get();
         if (!quizDoc.exists) return res.status(404).send("クイズが見つかりません。");
         const quiz = quizDoc.data();
@@ -485,6 +516,11 @@ router.get('/:quizId/edit', requireLogin, async (req, res) => {
  */
 router.post('/:quizId/edit', requireLogin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).send("データベースに接続できません。");
+        }
+
         const { title, visibility, questions } = req.body;
         const quizRef = db.collection('quizzes').doc(req.params.quizId);
         const doc = await quizRef.get();
@@ -509,6 +545,11 @@ router.post('/:quizId/edit', requireLogin, async (req, res) => {
  */
 router.get('/:quizId/delete', requireLogin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).send("データベースに接続できません。");
+        }
+
         const quizRef = db.collection('quizzes').doc(req.params.quizId);
         const doc = await quizRef.get();
         if (!doc.exists || doc.data().ownerId !== req.session.user.uid) return res.status(403).send("削除権限がありません。");

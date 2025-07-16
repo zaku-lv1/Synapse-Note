@@ -41,6 +41,14 @@ function requireAdmin(req, res, next) {
 // 管理者ダッシュボード
 router.get('/', requireAdmin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         // 統計情報を取得
         const usersSnapshot = await db.collection('users').get();
         const quizzesSnapshot = await db.collection('quizzes').get();
@@ -74,6 +82,14 @@ router.get('/', requireAdmin, async (req, res) => {
 // ユーザー管理ページ
 router.get('/users', requireAdmin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         const usersSnapshot = await db.collection('users').orderBy('createdAt', 'desc').get();
         const users = usersSnapshot.docs.map(doc => ({
             id: doc.id,
@@ -96,6 +112,14 @@ router.get('/users', requireAdmin, async (req, res) => {
 // クイズ管理ページ
 router.get('/quizzes', requireAdmin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         const quizzesSnapshot = await db.collection('quizzes').orderBy('createdAt', 'desc').get();
         const quizzes = [];
 
@@ -138,6 +162,14 @@ router.get('/quizzes', requireAdmin, async (req, res) => {
 // システム設定ページ
 router.get('/settings', requireAdmin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         const settingsDoc = await db.collection('system_settings').doc('general').get();
         const settings = settingsDoc.exists ? settingsDoc.data() : { 
             allowRegistration: true,
@@ -162,6 +194,14 @@ router.get('/settings', requireAdmin, async (req, res) => {
 // システム設定更新
 router.post('/settings', requireAdmin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
         const { allowRegistration, maintenanceMode, registrationMessage } = req.body;
         
         const settings = {
@@ -191,6 +231,11 @@ router.post('/settings', requireAdmin, async (req, res) => {
 // ユーザーを管理者に昇格
 router.post('/users/:userId/promote', requireAdmin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.redirect('/admin/users?error=データベースに接続できません。');
+        }
+
         const userId = req.params.userId;
         await db.collection('users').doc(userId).update({
             isAdmin: true,
@@ -208,6 +253,11 @@ router.post('/users/:userId/promote', requireAdmin, async (req, res) => {
 // ユーザーの管理者権限を取り消し
 router.post('/users/:userId/demote', requireAdmin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.redirect('/admin/users?error=データベースに接続できません。');
+        }
+
         const userId = req.params.userId;
         
         // 自分自身の権限は取り消せない
@@ -231,6 +281,11 @@ router.post('/users/:userId/demote', requireAdmin, async (req, res) => {
 // クイズ削除
 router.post('/quizzes/:quizId/delete', requireAdmin, async (req, res) => {
     try {
+        const db = getDb();
+        if (!db) {
+            return res.redirect('/admin/quizzes?error=データベースに接続できません。');
+        }
+
         const quizId = req.params.quizId;
         
         // クイズに関連するattempts も削除
