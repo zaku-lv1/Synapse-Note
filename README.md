@@ -1,5 +1,7 @@
 # Synapse Note
 
+> **言語選択 / Language:** 日本語 | [English](./README_EN.md) *(作成予定)*
+
 Gemini AIを活用した英語・日本語クイズ生成・採点アプリケーション
 
 ## 概要
@@ -208,6 +210,11 @@ npm start
 
 ## 関連ドキュメント
 
+### 日本語ドキュメント
+- [デプロイメントガイド（日本語）](./DEPLOYMENT_JA.md)
+- [Vercelデプロイチェックリスト（日本語）](./VERCEL_CHECKLIST_JA.md)
+
+### 英語ドキュメント
 - [英語版デプロイメントガイド](./DEPLOYMENT.md)
 - [Vercelデプロイチェックリスト](./VERCEL_CHECKLIST.md)
 - [クイズルーティング修正ドキュメント](./QUIZ_ROUTING_FIX.md)
