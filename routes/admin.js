@@ -56,7 +56,10 @@ router.get('/', requireAdmin, async (req, res) => {
 
         // システム設定を取得
         const settingsDoc = await db.collection('system_settings').doc('general').get();
-        const settings = settingsDoc.exists ? settingsDoc.data() : { allowRegistration: true };
+        const settings = settingsDoc.exists ? settingsDoc.data() : { 
+            allowRegistration: true, 
+            autoCleanupEnabled: false 
+        };
 
         const stats = {
             totalUsers: usersSnapshot.size,
@@ -174,7 +177,8 @@ router.get('/settings', requireAdmin, async (req, res) => {
         const settings = settingsDoc.exists ? settingsDoc.data() : { 
             allowRegistration: true,
             maintenanceMode: false,
-            registrationMessage: ''
+            registrationMessage: '',
+            autoCleanupEnabled: false
         };
 
         res.render('admin/settings', { 
@@ -202,12 +206,13 @@ router.post('/settings', requireAdmin, async (req, res) => {
             });
         }
 
-        const { allowRegistration, maintenanceMode, registrationMessage } = req.body;
+        const { allowRegistration, maintenanceMode, registrationMessage, autoCleanupEnabled } = req.body;
         
         const settings = {
             allowRegistration: allowRegistration === 'on',
             maintenanceMode: maintenanceMode === 'on',
             registrationMessage: registrationMessage || '',
+            autoCleanupEnabled: autoCleanupEnabled === 'on',
             updatedAt: new Date(),
             updatedBy: req.session.user.uid
         };
@@ -373,6 +378,132 @@ router.post('/users/:userId/delete', requireAdmin, async (req, res) => {
     } catch (error) {
         console.error("User deletion error:", error);
         res.redirect('/admin/users?error=ユーザーの削除中にエラーが発生しました。');
+    }
+});
+
+// 非アクティブユーザーの自動削除機能
+async function cleanupInactiveUsers(db) {
+    try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        
+        // 30日間非アクティブなユーザーを取得
+        const inactiveUsersSnapshot = await db.collection('users')
+            .where('lastActivityAt', '<=', thirtyDaysAgo)
+            .get();
+        
+        const deletedUsers = [];
+        
+        for (const userDoc of inactiveUsersSnapshot.docs) {
+            const userId = userDoc.id;
+            const userData = userDoc.data();
+            
+            // 管理者は削除対象外
+            if (userData.isAdmin) {
+                continue;
+            }
+            
+            // ユーザーが作成したクイズを取得
+            const userQuizzesSnapshot = await db.collection('quizzes')
+                .where('ownerId', '==', userId)
+                .get();
+            
+            let shouldDeleteUser = true;
+            
+            // ユーザーのクイズがある場合は、最近の試行履歴をチェック
+            for (const quizDoc of userQuizzesSnapshot.docs) {
+                const quizId = quizDoc.id;
+                
+                // 1週間以内にクイズが試行されているかチェック
+                const recentAttemptsSnapshot = await db.collection('quiz_attempts')
+                    .where('quizId', '==', quizId)
+                    .where('createdAt', '>', oneWeekAgo)
+                    .limit(1)
+                    .get();
+                
+                if (!recentAttemptsSnapshot.empty) {
+                    // 最近試行されているクイズがあるので、このユーザーは削除しない
+                    shouldDeleteUser = false;
+                    break;
+                }
+            }
+            
+            if (shouldDeleteUser) {
+                // ユーザーとその関連データを削除
+                const batch = db.batch();
+                
+                // ユーザーが作成したクイズと関連する試行履歴を削除
+                for (const quizDoc of userQuizzesSnapshot.docs) {
+                    const quizId = quizDoc.id;
+                    const attemptsSnapshot = await db.collection('quiz_attempts')
+                        .where('quizId', '==', quizId)
+                        .get();
+                    
+                    attemptsSnapshot.docs.forEach(attemptDoc => {
+                        batch.delete(attemptDoc.ref);
+                    });
+                    
+                    batch.delete(quizDoc.ref);
+                }
+                
+                // ユーザーの試行履歴を削除
+                const userAttemptsSnapshot = await db.collection('quiz_attempts')
+                    .where('userId', '==', userId)
+                    .get();
+                
+                userAttemptsSnapshot.docs.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                // ユーザー自体を削除
+                batch.delete(userDoc.ref);
+                
+                await batch.commit();
+                
+                deletedUsers.push({
+                    username: userData.username,
+                    handle: userData.handle,
+                    quizCount: userQuizzesSnapshot.size
+                });
+            }
+        }
+        
+        return deletedUsers;
+    } catch (error) {
+        console.error('Cleanup error:', error);
+        throw error;
+    }
+}
+
+// 手動クリーンアップ実行エンドポイント
+router.post('/cleanup', requireAdmin, async (req, res) => {
+    try {
+        const db = getDb();
+        if (!db) {
+            return res.redirect('/admin/settings?error=データベースに接続できません。');
+        }
+
+        // システム設定を確認
+        const settingsDoc = await db.collection('system_settings').doc('general').get();
+        const settings = settingsDoc.exists ? settingsDoc.data() : { autoCleanupEnabled: false };
+        
+        if (!settings.autoCleanupEnabled) {
+            return res.redirect('/admin/settings?error=自動削除機能が無効になっています。');
+        }
+
+        const deletedUsers = await cleanupInactiveUsers(db);
+        
+        const message = deletedUsers.length > 0 
+            ? `${deletedUsers.length}人の非アクティブユーザーを削除しました。`
+            : '削除対象の非アクティブユーザーはいませんでした。';
+            
+        res.redirect(`/admin/settings?message=${encodeURIComponent(message)}`);
+    } catch (error) {
+        console.error("Manual cleanup error:", error);
+        res.redirect('/admin/settings?error=クリーンアップ中にエラーが発生しました。');
     }
 });
 
