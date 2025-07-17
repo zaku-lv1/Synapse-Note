@@ -16,9 +16,7 @@ const optionalVars = [
     'PORT',
     'NODE_ENV',
     'GOOGLE_APPLICATION_CREDENTIALS',
-    'GOOGLE_APPLICATION_CREDENTIALS_JSON',
-    'GOOGLE_APPS_SCRIPT_URL',
-    'USE_GOOGLE_APPS_SCRIPT'
+    'GOOGLE_APPLICATION_CREDENTIALS_JSON'
 ];
 
 console.log('🔍 Environment Variables Validation\n');

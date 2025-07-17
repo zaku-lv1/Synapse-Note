@@ -164,11 +164,6 @@ app.get('/health', async (req, res) => {
         firebase: !!db,
         session: !!process.env.SESSION_SECRET,
         ai: !!process.env.GEMINI_API_KEY,
-        googleAppsScript: {
-            configured: !!process.env.GOOGLE_APPS_SCRIPT_URL,
-            enabled: process.env.USE_GOOGLE_APPS_SCRIPT !== 'false',
-            url: process.env.GOOGLE_APPS_SCRIPT_URL || 'default'
-        },
         credentials: {
             firebaseJson: !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON,
             firebaseFile: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
@@ -195,29 +190,6 @@ app.get('/health', async (req, res) => {
     } else {
         healthStatus.databaseConnection = 'not_configured';
         healthStatus.status = 'degraded';
-    }
-
-    // Test Google Apps Script connection if configured
-    if (healthStatus.googleAppsScript.configured && healthStatus.googleAppsScript.enabled) {
-        try {
-            const GoogleAppsScriptService = require('./services/googleAppsScriptService');
-            const gasService = new GoogleAppsScriptService();
-            
-            const gasConnected = await Promise.race([
-                gasService.testConnection(),
-                new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Google Apps Script connection timeout')), 5000)
-                )
-            ]);
-            
-            healthStatus.googleAppsScript.connection = gasConnected ? 'connected' : 'failed';
-        } catch (error) {
-            healthStatus.googleAppsScript.connection = 'failed';
-            healthStatus.googleAppsScript.error = error.message;
-            // Don't degrade overall status for GAS connection issues since it's optional
-        }
-    } else {
-        healthStatus.googleAppsScript.connection = 'not_tested';
     }
     
     res.json(healthStatus);
