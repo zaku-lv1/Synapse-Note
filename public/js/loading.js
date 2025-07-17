@@ -142,6 +142,38 @@ const QuizLoading = {
 };
 
 /**
+ * Admin-specific loading functions
+ */
+const AdminLoading = {
+    /**
+     * Show loading for admin settings save
+     */
+    showSettingsSave() {
+        loadingManager.show(
+            'システム設定を保存中...',
+            '設定を保存しています。しばらくお待ちください。'
+        );
+    },
+
+    /**
+     * Show loading for admin cleanup operation
+     */
+    showCleanup() {
+        loadingManager.show(
+            'ユーザーのクリーンアップを実行中...',
+            '非アクティブユーザーを削除しています。この処理には時間がかかる場合があります。'
+        );
+    },
+
+    /**
+     * Hide loading
+     */
+    hide() {
+        loadingManager.hide();
+    }
+};
+
+/**
  * Form submission with loading state
  */
 function submitFormWithLoading(form, loadingType = 'default') {
@@ -165,6 +197,12 @@ function submitFormWithLoading(form, loadingType = 'default') {
             break;
         case 'saving':
             QuizLoading.showSaving();
+            break;
+        case 'admin-settings':
+            AdminLoading.showSettingsSave();
+            break;
+        case 'admin-cleanup':
+            AdminLoading.showCleanup();
             break;
         default:
             loadingManager.show('処理中...', 'しばらくお待ちください');
@@ -220,6 +258,27 @@ function initializeQuizLoading() {
 }
 
 /**
+ * Initialize loading for admin forms
+ */
+function initializeAdminLoading() {
+    // Admin settings form
+    const adminSettingsForm = document.querySelector('form[action="/admin/settings"]');
+    if (adminSettingsForm) {
+        adminSettingsForm.addEventListener('submit', function(e) {
+            submitFormWithLoading(this, 'admin-settings');
+        });
+    }
+
+    // Admin cleanup form
+    const adminCleanupForm = document.querySelector('form[action="/admin/cleanup"]');
+    if (adminCleanupForm) {
+        adminCleanupForm.addEventListener('submit', function(e) {
+            submitFormWithLoading(this, 'admin-cleanup');
+        });
+    }
+}
+
+/**
  * Handle page errors and hide loading if necessary
  */
 function handlePageErrors() {
@@ -235,10 +294,12 @@ function handlePageErrors() {
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeQuizLoading();
+    initializeAdminLoading();
     handlePageErrors();
 });
 
 // Export for global use
 window.LoadingManager = LoadingManager;
 window.QuizLoading = QuizLoading;
+window.AdminLoading = AdminLoading;
 window.loadingManager = loadingManager;
