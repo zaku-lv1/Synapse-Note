@@ -16,6 +16,7 @@
 const express = require('express');
 const router = express.Router();
 const admin = require('firebase-admin');
+const GoogleAppsScriptService = require('../services/googleAppsScriptService');
 
 // Firestore データベースインスタンス (lazy initialization)
 function getDb() {
@@ -26,6 +27,9 @@ function getDb() {
         return null;
     }
 }
+
+// Google Apps Script service instance
+const gasService = new GoogleAppsScriptService();
 
 // --- ミドルウェア ---
 
@@ -70,6 +74,22 @@ function requireAuth(req, res, next) {
 // システム全体の統計情報を取得
 router.get('/public/stats', requireDatabase, async (req, res) => {
     try {
+        // First try to get stats from Google Apps Script
+        let useGoogleAppsScript = process.env.USE_GOOGLE_APPS_SCRIPT !== 'false';
+        
+        if (useGoogleAppsScript) {
+            try {
+                console.log('Attempting to get stats from Google Apps Script...');
+                const gasStats = await gasService.getSystemStats();
+                console.log('Successfully retrieved stats from Google Apps Script');
+                return res.json(gasStats);
+            } catch (gasError) {
+                console.warn('Failed to get stats from Google Apps Script, falling back to local database:', gasError.message);
+                // Continue to local database fallback
+            }
+        }
+
+        // Fallback to local database
         const db = req.db;
         
         // 並列でデータを取得
@@ -110,6 +130,7 @@ router.get('/public/stats', requireDatabase, async (req, res) => {
                 quizzesByVisibility: quizzesByVisibility,
                 generatedAt: new Date().toISOString()
             },
+            source: 'local-database',
             timestamp: new Date().toISOString()
         };
 
@@ -122,6 +143,22 @@ router.get('/public/stats', requireDatabase, async (req, res) => {
 // 登録ユーザー数のみ取得
 router.get('/public/users/count', requireDatabase, async (req, res) => {
     try {
+        // First try to get user count from Google Apps Script
+        let useGoogleAppsScript = process.env.USE_GOOGLE_APPS_SCRIPT !== 'false';
+        
+        if (useGoogleAppsScript) {
+            try {
+                console.log('Attempting to get user count from Google Apps Script...');
+                const gasUserCount = await gasService.getUserCount();
+                console.log('Successfully retrieved user count from Google Apps Script');
+                return res.json(gasUserCount);
+            } catch (gasError) {
+                console.warn('Failed to get user count from Google Apps Script, falling back to local database:', gasError.message);
+                // Continue to local database fallback
+            }
+        }
+
+        // Fallback to local database
         const db = req.db;
         const usersSnapshot = await db.collection('users').get();
         
@@ -131,6 +168,7 @@ router.get('/public/users/count', requireDatabase, async (req, res) => {
                 count: usersSnapshot.size,
                 generatedAt: new Date().toISOString()
             },
+            source: 'local-database',
             timestamp: new Date().toISOString()
         });
     } catch (error) {
@@ -141,6 +179,22 @@ router.get('/public/users/count', requireDatabase, async (req, res) => {
 // クイズ総数のみ取得
 router.get('/public/quizzes/count', requireDatabase, async (req, res) => {
     try {
+        // First try to get quiz count from Google Apps Script
+        let useGoogleAppsScript = process.env.USE_GOOGLE_APPS_SCRIPT !== 'false';
+        
+        if (useGoogleAppsScript) {
+            try {
+                console.log('Attempting to get quiz count from Google Apps Script...');
+                const gasQuizCount = await gasService.getQuizCount();
+                console.log('Successfully retrieved quiz count from Google Apps Script');
+                return res.json(gasQuizCount);
+            } catch (gasError) {
+                console.warn('Failed to get quiz count from Google Apps Script, falling back to local database:', gasError.message);
+                // Continue to local database fallback
+            }
+        }
+
+        // Fallback to local database
         const db = req.db;
         const quizzesSnapshot = await db.collection('quizzes').get();
         
@@ -150,10 +204,93 @@ router.get('/public/quizzes/count', requireDatabase, async (req, res) => {
                 count: quizzesSnapshot.size,
                 generatedAt: new Date().toISOString()
             },
+            source: 'local-database',
             timestamp: new Date().toISOString()
         });
     } catch (error) {
         handleApiError(res, error, 'Failed to retrieve quiz count');
+    }
+});
+
+// --- Google Apps Script専用API ---
+
+// Google Apps Scriptとの接続テスト
+router.get('/gas/ping', async (req, res) => {
+    try {
+        console.log('Testing Google Apps Script connection...');
+        const isConnected = await gasService.testConnection();
+        
+        res.json({
+            success: true,
+            data: {
+                connected: isConnected,
+                scriptUrl: gasService.scriptUrl,
+                testedAt: new Date().toISOString()
+            },
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        handleApiError(res, error, 'Failed to test Google Apps Script connection');
+    }
+});
+
+// Google Apps Scriptに任意のアクションを送信
+router.post('/gas/action', async (req, res) => {
+    try {
+        const { action, data } = req.body;
+        
+        if (!action) {
+            return res.status(400).json({
+                success: false,
+                error: 'Action parameter is required',
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        console.log(`Sending action "${action}" to Google Apps Script...`);
+        const result = await gasService.performAction(action, data);
+        
+        res.json(result);
+    } catch (error) {
+        handleApiError(res, error, 'Failed to perform Google Apps Script action');
+    }
+});
+
+// Google Apps Scriptにユーザーデータを送信
+router.post('/gas/submit-user-data', requireAuth, async (req, res) => {
+    try {
+        const userData = {
+            userId: req.session.user.uid,
+            username: req.session.user.username,
+            submittedAt: new Date().toISOString(),
+            data: req.body.data || {}
+        };
+
+        console.log('Submitting user data to Google Apps Script...');
+        const result = await gasService.submitUserData(userData);
+        
+        res.json(result);
+    } catch (error) {
+        handleApiError(res, error, 'Failed to submit user data to Google Apps Script');
+    }
+});
+
+// Google Apps Scriptにクイズデータを送信
+router.post('/gas/submit-quiz-data', requireAuth, async (req, res) => {
+    try {
+        const quizData = {
+            userId: req.session.user.uid,
+            username: req.session.user.username,
+            submittedAt: new Date().toISOString(),
+            data: req.body.data || {}
+        };
+
+        console.log('Submitting quiz data to Google Apps Script...');
+        const result = await gasService.submitQuizData(quizData);
+        
+        res.json(result);
+    } catch (error) {
+        handleApiError(res, error, 'Failed to submit quiz data to Google Apps Script');
     }
 });
 

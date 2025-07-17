@@ -36,6 +36,11 @@ Synapse Noteは、Google Gemini AIを使用してクイズを自動生成し、�
 - システム全体の統計情報
 - データベース管理
 
+### 外部API統合
+- **Google Apps Script統合**: 外部データソースとの連携機能
+- 自動フォールバック機能付きAPI
+- カスタムアクション送信機能
+
 ## 技術スタック
 
 ### バックエンド
@@ -83,6 +88,8 @@ GOOGLE_APPLICATION_CREDENTIALS=./path/to/service-account-key.json
 ```bash
 PORT=3000                    # ポート番号（デフォルト: 3000）
 NODE_ENV=development         # 実行環境（development/production）
+GOOGLE_APPS_SCRIPT_URL=...   # Google Apps Script APIのURL
+USE_GOOGLE_APPS_SCRIPT=true  # Google Apps Script統合の有効/無効
 ```
 
 ## セットアップ手順
@@ -213,6 +220,7 @@ npm start
 ### 日本語ドキュメント
 - [デプロイメントガイド（日本語）](./DEPLOYMENT_JA.md)
 - [Vercelデプロイチェックリスト（日本語）](./VERCEL_CHECKLIST_JA.md)
+- [Google Apps Script統合ガイド](./GOOGLE_APPS_SCRIPT_INTEGRATION.md)
 
 ### 英語ドキュメント
 - [英語版デプロイメントガイド](./DEPLOYMENT.md)
