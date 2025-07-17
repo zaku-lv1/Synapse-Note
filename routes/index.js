@@ -182,5 +182,4 @@ router.get('/public-quizzes', async (req, res) => {
     }
 });
 
-
 module.exports = router;
