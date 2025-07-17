@@ -320,15 +320,16 @@ router.post('/submit', async (req, res) => {
         const { quizId, draftQuizData, answers } = req.body;
         let quiz, isDraft = false;
 
+        // Initialize db outside of if/else block so it's available throughout the function
+        const db = getDb();
+        if (!db) {
+            return res.status(500).send("データベースに接続できません。");
+        }
+
         if (draftQuizData) {
             quiz = JSON.parse(draftQuizData);
             isDraft = true;
         } else {
-            const db = getDb();
-            if (!db) {
-                return res.status(500).send("データベースに接続できません。");
-            }
-
             const quizDoc = await db.collection('quizzes').doc(quizId).get();
             if (!quizDoc.exists) return res.status(404).send("クイズが見つかりません。");
             quiz = { id: quizDoc.id, ...quizDoc.data() };
