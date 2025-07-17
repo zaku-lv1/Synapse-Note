@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Service Worker Test</title>
+</head>
+<body>
+    <h1>Service Worker Test Page</h1>
+    <p>Check browser console for service worker registration status.</p>
+    
+    <button id="testNavigation">Test Navigation</button>
+    <button id="testStatic">Test Static Resource</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        function log(message) {
+            console.log(message);
+            const div = document.createElement('div');
+            div.textContent = message;
+            results.appendChild(div);
+        }
+        
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    log('✓ Service worker registered successfully');
+                    
+                    // Test navigation
+                    document.getElementById('testNavigation').onclick = () => {
+                        log('Testing navigation request...');
+                        fetch(window.location.href, { mode: 'navigate' })
+                            .then(() => log('✓ Navigation test passed'))
+                            .catch(err => log('✗ Navigation test failed: ' + err.message));
+                    };
+                    
+                    // Test static resource
+                    document.getElementById('testStatic').onclick = () => {
+                        log('Testing static resource request...');
+                        fetch('/css/style.css')
+                            .then(() => log('✓ Static resource test passed'))
+                            .catch(err => log('✗ Static resource test failed: ' + err.message));
+                    };
+                })
+                .catch(err => {
+                    log('✗ Service worker registration failed: ' + err.message);
+                });
+        } else {
+            log('✗ Service workers not supported');
+        }
+    </script>
+</body>
+</html>
