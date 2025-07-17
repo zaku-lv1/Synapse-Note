@@ -123,11 +123,17 @@ router.post('/generate-from-image',
 # JSON出力形式（解説は不要）
 [{"type": "multiple_choice", "question": "問題文", "options": ["選択肢1", "選択肢2"], "answer": "正解の文字列", "points": 10}]`;
 
-            const generationResult = await model.generateContent([generationPrompt, ...imageParts]);
+            // STEP 1: クイズ生成 with timeout
+            const generationPromise = model.generateContent([generationPrompt, ...imageParts]);
+            const generationTimeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Image quiz generation timeout')), 45000) // 45 second timeout
+            );
+
+            const generationResult = await Promise.race([generationPromise, generationTimeoutPromise]);
             const initialJsonText = generationResult.response.text().match(/\[[\s\S]*\]/)[0];
             const initialQuestions = JSON.parse(initialJsonText);
 
-            // STEP 2: 検証
+            // STEP 2: 検証 with timeout
             const verificationPrompt = `あなたは、極めて厳格で正確な校正担当AIです。あなたの唯一の任務は、提示された画像群に基づき、AIが生成したクイズの間違いを検出・修正することです。
 # 状況
 AIが画像からクイズを生成しましたが、読み間違えによる誤りが含まれている可能性があります。
@@ -142,7 +148,12 @@ AIが画像からクイズを生成しましたが、読み間違えによる誤
 ${JSON.stringify(initialQuestions, null, 2)}
 `;
 
-            const verificationResult = await model.generateContent([verificationPrompt, ...imageParts]);
+            const verificationPromise = model.generateContent([verificationPrompt, ...imageParts]);
+            const verificationTimeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Image quiz verification timeout')), 30000) // 30 second timeout
+            );
+
+            const verificationResult = await Promise.race([verificationPromise, verificationTimeoutPromise]);
             const verifiedJsonText = verificationResult.response.text().match(/\[[\s\S]*\]/)[0];
             const verifiedQuestions = JSON.parse(verifiedJsonText);
 
@@ -201,7 +212,13 @@ router.post('/create', requireLogin, async (req, res) => {
 # JSON出力形式 (解説は不要)
 [{"type": "multiple_choice", "question": "問題文", "options": ["選択肢1", "選択肢2"], "answer": "正解の文字列", "points": 10}]`;
 
-        const result = await model.generateContent(prompt);
+        // Add timeout to prevent very long waits during quiz creation
+        const creationPromise = model.generateContent(prompt);
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Quiz creation timeout')), 30000) // 30 second timeout
+        );
+
+        const result = await Promise.race([creationPromise, timeoutPromise]);
         const jsonText = result.response.text().match(/\[[\s\S]*\]/)[0];
         const questions = JSON.parse(jsonText);
 
@@ -345,7 +362,7 @@ router.post('/submit', async (req, res) => {
         let aiError = false;
 
         try {
-            // AI採点
+            // AI採点 with timeout
             const prompt = `あなたは公平で優秀な教師です。生徒が解いたテストの採点を行ってください。
 # テスト問題と正解
 ${JSON.stringify(questions, null, 2)}
@@ -367,7 +384,13 @@ ${JSON.stringify(normalizedAnswers, null, 2)}
 # JSON出力形式
 [{"is_correct": boolean, "score": number, "feedback": "生徒への具体的で役立つフィードバック(string)"}]`;
 
-            const result = await model.generateContent(prompt);
+            // Add timeout to prevent very long waits
+            const gradingPromise = model.generateContent(prompt);
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('AI grading timeout')), 45000) // 45 second timeout
+            );
+
+            const result = await Promise.race([gradingPromise, timeoutPromise]);
             const jsonText = result.response.text().match(/\[[\s\S]*\]/)[0];
             gradingResults = JSON.parse(jsonText);
 
