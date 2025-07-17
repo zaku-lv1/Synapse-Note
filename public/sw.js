@@ -19,7 +19,13 @@ self.addEventListener('install', event => {
 self.addEventListener('fetch', event => {
   // APIやHTMLページはネットワーク優先にする（またはキャッシュしない）
   if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request));
+    event.respondWith(fetch(event.request.url, {
+      method: event.request.method,
+      headers: event.request.headers,
+      mode: 'same-origin',
+      credentials: event.request.credentials,
+      cache: 'default'
+    }));
     return;
   }
   // 静的ファイルのみキャッシュファースト
