@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Allow: /public-quizzes
+Allow: /login
+Allow: /register
+
+# Disallow private user areas
+Disallow: /dashboard
+Disallow: /my-history
+Disallow: /quiz/my-quizzes
+Disallow: /profile
+Disallow: /admin
+
+# Allow specific quiz pages (public ones will be crawlable)
+Allow: /quiz/
+
+# Site map location
+Sitemap: https://synapse-note.vercel.app/sitemap.xml
+
+# Crawl delay (optional - helps prevent overloading the server)
+Crawl-delay: 1

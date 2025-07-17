@@ -123,6 +123,7 @@ const quizRoutes = require('./routes/quizzes');
 const profileRoutes = require('./routes/profile');
 const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
+const seoRoutes = require('./routes/seo');
 
 // ★★★ ここからが修正点 ★★★
 
@@ -143,6 +144,7 @@ app.get('/', (req, res) => {
 
 // 2. 各ルーターを適切なパスにマウント（割り当て）します
 //    より具体的なパス（/quiz）を先に記述するのがベストプラクティスです。
+app.use('/', seoRoutes);        // SEO関連 (/sitemap.xml, /robots.txt)
 app.use('/api', apiRoutes);      // API関連 (/api/public/stats, /api/user/profile など)
 app.use('/admin', adminRoutes);   // 管理者関連 (/admin/users, /admin/quizzes など)
 app.use('/quiz', quizRoutes); // クイズ関連 (/quiz/create-quiz など)

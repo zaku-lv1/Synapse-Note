@@ -3,7 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Synapse Note</title>
+    
+    <!-- ===== SEO Meta Tags ===== -->
+    <title><%= typeof pageTitle !== 'undefined' ? pageTitle : 'Synapse Note - AIで作るオリジナル問題集' %></title>
+    <meta name="description" content="<%= typeof pageDescription !== 'undefined' ? pageDescription : 'AIを活用してオリジナルの英語・日本語問題を作成し、学習効果を最大化するクイズアプリケーション。Gemini AIが生成する高品質な問題で、あなたの学習をサポートします。' %>">
+    <meta name="keywords" content="<%= typeof pageKeywords !== 'undefined' ? pageKeywords : 'AI学習,クイズ,問題集,英語学習,日本語学習,Gemini,教育,オンライン学習' %>">
+    <meta name="author" content="Zaku Lv1">
+    <meta name="robots" content="<%= typeof pageRobots !== 'undefined' ? pageRobots : 'index,follow' %>">
+    
+    <!-- ===== Canonical URL ===== -->
+    <link rel="canonical" href="<%= typeof canonicalUrl !== 'undefined' ? canonicalUrl : 'https://synapse-note.vercel.app' + (typeof originalUrl !== 'undefined' ? originalUrl : '') %>">
+    
+    <!-- ===== Open Graph Meta Tags ===== -->
+    <meta property="og:type" content="<%= typeof ogType !== 'undefined' ? ogType : 'website' %>">
+    <meta property="og:title" content="<%= typeof pageTitle !== 'undefined' ? pageTitle : 'Synapse Note - AIで作るオリジナル問題集' %>">
+    <meta property="og:description" content="<%= typeof pageDescription !== 'undefined' ? pageDescription : 'AIを活用してオリジナルの英語・日本語問題を作成し、学習効果を最大化するクイズアプリケーション。' %>">
+    <meta property="og:url" content="<%= typeof canonicalUrl !== 'undefined' ? canonicalUrl : 'https://synapse-note.vercel.app' + (typeof originalUrl !== 'undefined' ? originalUrl : '') %>">
+    <meta property="og:site_name" content="Synapse Note">
+    <meta property="og:image" content="<%= typeof ogImage !== 'undefined' ? ogImage : 'https://synapse-note.vercel.app/favicon.svg' %>">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="ja_JP">
+    
+    <!-- ===== Twitter Card Meta Tags ===== -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<%= typeof pageTitle !== 'undefined' ? pageTitle : 'Synapse Note - AIで作るオリジナル問題集' %>">
+    <meta name="twitter:description" content="<%= typeof pageDescription !== 'undefined' ? pageDescription : 'AIを活用してオリジナルの英語・日本語問題を作成し、学習効果を最大化するクイズアプリケーション。' %>">
+    <meta name="twitter:image" content="<%= typeof ogImage !== 'undefined' ? ogImage : 'https://synapse-note.vercel.app/favicon.svg' %>">
+    
+    <!-- ===== Structured Data (JSON-LD) ===== -->
+    <% if (typeof structuredData !== 'undefined') { %>
+    <script type="application/ld+json">
+    <%- JSON.stringify(structuredData) %>
+    </script>
+    <% } else { %>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Synapse Note",
+        "description": "AIを活用してオリジナルの英語・日本語問題を作成し、学習効果を最大化するクイズアプリケーション",
+        "url": "https://synapse-note.vercel.app",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "JPY"
+        },
+        "author": {
+            "@type": "Person",
+            "name": "Zaku Lv1"
+        }
+    }
+    </script>
+    <% } %>
     
     <!-- ===== CSSファイルの読み込み ===== -->
     <link rel="stylesheet" href="/css/style.css">

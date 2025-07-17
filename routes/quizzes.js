@@ -634,7 +634,49 @@ router.get('/:quizId', async (req, res) => {
             });
         }
         
-        res.render('solve-quiz', { user: req.session.user || null, quiz: { id: quizDoc.id, ...quiz }, isDraft: false });
+        // Prepare SEO metadata for individual quiz page
+        const pageTitle = quiz.title ? `${quiz.title} - Synapse Note | AI生成問題` : 'クイズ - Synapse Note';
+        const pageDescription = quiz.description 
+            ? `${quiz.description.substring(0, 150)}...` 
+            : `${quiz.subject}の${quiz.difficulty}レベルのAI生成問題に挑戦しましょう。`;
+        const pageKeywords = `${quiz.subject},${quiz.difficulty},AI問題,クイズ,学習,${quiz.language === 'English' ? '英語' : '日本語'}`;
+        const canonicalUrl = `https://synapse-note.vercel.app/quiz/${encodeURIComponent(quizDoc.id)}`;
+        const ogType = 'article';
+        const structuredData = {
+            "@context": "https://schema.org",
+            "@type": "Quiz",
+            "name": quiz.title,
+            "description": quiz.description || `${quiz.subject}の${quiz.difficulty}レベルの問題`,
+            "educationalLevel": quiz.difficulty,
+            "about": quiz.subject,
+            "inLanguage": quiz.language === 'English' ? 'en' : 'ja',
+            "dateCreated": quiz.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+            "author": {
+                "@type": "Person",
+                "name": quiz.author || "匿名"
+            },
+            "publisher": {
+                "@type": "Organization",
+                "name": "Synapse Note"
+            },
+            "isPartOf": {
+                "@type": "WebApplication",
+                "name": "Synapse Note",
+                "url": "https://synapse-note.vercel.app"
+            }
+        };
+        
+        res.render('solve-quiz', { 
+            user: req.session.user || null, 
+            quiz: { id: quizDoc.id, ...quiz }, 
+            isDraft: false,
+            pageTitle,
+            pageDescription,
+            pageKeywords,
+            canonicalUrl,
+            ogType,
+            structuredData
+        });
     } catch (error) {
         console.error("クイズ表示エラー:", error);
         

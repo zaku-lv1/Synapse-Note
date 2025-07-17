@@ -1,3 +1,23 @@
+<%
+// SEO metadata for public quizzes page
+const pageTitle = '公開テスト一覧 - Synapse Note | みんなのAI問題集';
+const pageDescription = '他のユーザーが作成したAI生成問題に挑戦！英語・日本語の様々な分野の問題が公開されています。無料で利用できる学習コンテンツで知識を深めましょう。';
+const pageKeywords = '公開問題,AI問題,クイズ挑戦,英語問題,日本語問題,無料学習,オンラインテスト,教育コンテンツ';
+const canonicalUrl = 'https://synapse-note.vercel.app/public-quizzes';
+const ogType = 'website';
+const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "公開テスト一覧",
+    "description": "他のユーザーが作成したAI生成問題に挑戦できる公開テスト一覧",
+    "url": "https://synapse-note.vercel.app/public-quizzes",
+    "isPartOf": {
+        "@type": "WebApplication",
+        "name": "Synapse Note",
+        "url": "https://synapse-note.vercel.app"
+    }
+};
+%>
 <%- include('partials/header') %>
 
 <div class="list-page-container">

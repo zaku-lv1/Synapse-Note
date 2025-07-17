@@ -1,3 +1,35 @@
+<%
+// SEO metadata for index page
+const pageTitle = 'Synapse Note - AIで作るオリジナル問題集｜英語・日本語学習アプリ';
+const pageDescription = 'Gemini AIを活用してオリジナルの英語・日本語問題を作成・採点する学習アプリ。あなただけの問題集で効率的に学習を進められます。無料で始められる新しい学習体験をお試しください。';
+const pageKeywords = 'AI学習,クイズ作成,問題集,英語学習,日本語学習,Gemini AI,オンライン学習,無料,教育アプリ,自動採点';
+const canonicalUrl = 'https://synapse-note.vercel.app/';
+const ogType = 'website';
+const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Synapse Note",
+    "description": "Gemini AIを活用してオリジナルの英語・日本語問題を作成・採点する学習アプリ",
+    "url": "https://synapse-note.vercel.app",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web",
+    "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "JPY"
+    },
+    "author": {
+        "@type": "Person", 
+        "name": "Zaku Lv1"
+    },
+    "featureList": [
+        "AI問題生成",
+        "自動採点",
+        "英語・日本語対応",
+        "オリジナル問題集作成"
+    ]
+};
+%>
 <%- include('partials/header') %>
 
 <main>
