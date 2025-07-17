@@ -1,12 +1,13 @@
 <%- include('partials/header') %>
 
-<div class="dashboard-container">
-    <div class="dashboard-header">
-        <h2 class="page-title">ダッシュボード</h2>
-        <p class="welcome-message">ようこそ、<%= user.username %>さん！ここから始めましょう。</p>
-    </div>
+<main>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h2 class="page-title">ダッシュボード</h2>
+            <p class="welcome-message">ようこそ、<%= user.username %>さん！ここから始めましょう。</p>
+        </div>
 
-    <div class="action-list">
+        <div class="action-list">
         <!-- クイズ作成カード (テキストAI自動) -->
         <a href="/quiz/create" class="action-card">
             <div class="card-icon">
@@ -80,6 +81,7 @@
             </div>
         </a>
     </div>
-</div>
+    </div>
+</main>
 
 <%- include('partials/footer') %>
