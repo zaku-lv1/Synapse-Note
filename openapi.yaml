@@ -1,0 +1,697 @@
+openapi: 3.0.3
+info:
+  title: Synapse Note API
+  description: |
+    Synapse Noteのクイズ作成・実行プラットフォーム用API
+
+    ## 機能概要
+    - **AI搭載クイズ生成**: 画像やテキストから自動でクイズを生成
+    - **セッションベース認証**: セキュアなユーザー管理
+    - **クイズ管理**: 作成、編集、削除、実行
+    - **統計・分析**: ユーザーとシステムの詳細統計
+    - **Google Apps Script連携**: 外部システムとの統合
+
+    ## 認証について
+    Synapse NoteはセッションベースのCookie認証を使用します。
+    `/login`エンドポイントでログイン後、セッションCookieが自動で送信されます。
+
+  version: 1.0.0
+  contact:
+    name: Zaku Lv1
+    url: https://github.com/zaku-lv1/Synapse-Note
+  license:
+    name: ISC
+
+servers:
+  - url: http://localhost:3000
+    description: 開発環境サーバー
+  - url: https://your-domain.com
+    description: 本番環境サーバー
+
+paths:
+  /api/public/stats:
+    get:
+      tags:
+        - 公開API
+      summary: システム統計取得
+      description: システム全体のユーザー数、クイズ数、実行回数などの統計情報を取得
+      responses:
+        '200':
+          description: 統計情報の取得に成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      totalUsers:
+                        type: integer
+                        description: 総ユーザー数
+                        example: 150
+                      totalQuizzes:
+                        type: integer
+                        description: 総クイズ数
+                        example: 89
+                      totalAttempts:
+                        type: integer
+                        description: 総実行回数
+                        example: 2341
+                      adminCount:
+                        type: integer
+                        description: 管理者数
+                        example: 3
+                      quizzesByVisibility:
+                        type: object
+                        properties:
+                          public:
+                            type: integer
+                            description: 公開クイズ数
+                            example: 67
+                          private:
+                            type: integer
+                            description: プライベートクイズ数
+                            example: 22
+                      generatedAt:
+                        type: string
+                        format: date-time
+                        description: 統計生成日時
+                  source:
+                    type: string
+                    enum: [google-apps-script, local-database]
+                    description: データソース
+                  timestamp:
+                    type: string
+                    format: date-time
+                    description: レスポンス生成日時
+        '503':
+          $ref: '#/components/responses/DatabaseUnavailable'
+
+  /api/public/users/count:
+    get:
+      tags:
+        - 公開API
+      summary: ユーザー数取得
+      description: 登録ユーザー数のみを取得
+      responses:
+        '200':
+          description: ユーザー数の取得に成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        description: ユーザー数
+                        example: 150
+                      generatedAt:
+                        type: string
+                        format: date-time
+                  source:
+                    type: string
+                    enum: [google-apps-script, local-database]
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/public/quizzes/count:
+    get:
+      tags:
+        - 公開API
+      summary: クイズ数取得
+      description: クイズ総数のみを取得
+      responses:
+        '200':
+          description: クイズ数の取得に成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        description: クイズ数
+                        example: 89
+                      generatedAt:
+                        type: string
+                        format: date-time
+                  source:
+                    type: string
+                    enum: [google-apps-script, local-database]
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/gas/ping:
+    get:
+      tags:
+        - Google Apps Script
+      summary: GAS接続テスト
+      description: Google Apps Scriptとの接続状態をテスト
+      responses:
+        '200':
+          description: 接続テスト結果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      connected:
+                        type: boolean
+                        description: 接続状態
+                        example: true
+                      scriptUrl:
+                        type: string
+                        description: スクリプトURL
+                        example: "https://script.google.com/macros/s/.../exec"
+                      testedAt:
+                        type: string
+                        format: date-time
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/gas/action:
+    post:
+      tags:
+        - Google Apps Script
+      summary: GASアクション実行
+      description: Google Apps Scriptに任意のアクションを送信
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - action
+              properties:
+                action:
+                  type: string
+                  description: 実行するアクション名
+                  example: "test_action"
+                data:
+                  type: object
+                  description: アクションに渡すデータ
+                  example:
+                    param1: "value1"
+                    param2: "value2"
+      responses:
+        '200':
+          description: アクション実行成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/user/profile:
+    get:
+      tags:
+        - ユーザーAPI
+      summary: ユーザープロフィール取得
+      description: 現在ログインしているユーザーのプロフィール情報を取得
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: プロフィール情報の取得に成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/UserProfile'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/user/quizzes:
+    get:
+      tags:
+        - ユーザーAPI
+      summary: ユーザー作成クイズ一覧
+      description: 現在のユーザーが作成したクイズの一覧を取得
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: クイズ一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      quizzes:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/QuizSummary'
+                      totalCount:
+                        type: integer
+                        description: 総クイズ数
+                        example: 5
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/user/history:
+    get:
+      tags:
+        - ユーザーAPI
+      summary: ユーザークイズ履歴
+      description: 現在のユーザーのクイズ実行履歴を取得（最新50件）
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: 履歴の取得に成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      history:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/QuizAttempt'
+                      totalCount:
+                        type: integer
+                        description: 総履歴数
+                        example: 25
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/user/stats:
+    get:
+      tags:
+        - ユーザーAPI
+      summary: ユーザー統計情報
+      description: 現在のユーザーの詳細統計情報を取得
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: 統計情報の取得に成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/UserStats'
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /login:
+    post:
+      tags:
+        - 認証
+      summary: ユーザーログイン
+      description: ユーザーログインを実行し、セッションを開始
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - handle
+                - password
+              properties:
+                handle:
+                  type: string
+                  description: ユーザーハンドル（@付きまたはなし）
+                  example: "@testuser"
+                password:
+                  type: string
+                  description: パスワード
+                  example: "password123"
+      responses:
+        '302':
+          description: ログイン成功、ダッシュボードにリダイレクト
+        '400':
+          description: ログイン失敗、無効な認証情報
+
+  /logout:
+    get:
+      tags:
+        - 認証
+      summary: ユーザーログアウト
+      description: セッションを終了し、ログアウト
+      responses:
+        '302':
+          description: ログアウト成功、トップページにリダイレクト
+
+  /quiz/submit:
+    post:
+      tags:
+        - クイズ
+      summary: クイズ回答提出
+      description: クイズの回答を提出し、採点結果を取得
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quizId
+                - answers
+                - userId
+                - startTime
+                - endTime
+              properties:
+                quizId:
+                  type: string
+                  description: クイズID
+                  example: "quiz123"
+                answers:
+                  type: array
+                  items:
+                    type: integer
+                  description: 回答配列（選択肢のインデックス）
+                  example: [0, 2, 1, 3]
+                userId:
+                  type: string
+                  description: ユーザーID
+                  example: "user123"
+                startTime:
+                  type: string
+                  format: date-time
+                  description: 開始時刻
+                endTime:
+                  type: string
+                  format: date-time
+                  description: 終了時刻
+      responses:
+        '200':
+          description: 回答提出成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  score:
+                    type: number
+                    description: スコア（パーセンテージ）
+                    example: 85
+                  totalQuestions:
+                    type: integer
+                    description: 総問題数
+                    example: 4
+                  correctAnswers:
+                    type: integer
+                    description: 正解数
+                    example: 3
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        questionIndex:
+                          type: integer
+                        isCorrect:
+                          type: boolean
+                        userAnswer:
+                          type: integer
+                        correctAnswer:
+                          type: integer
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: セッションベース認証用Cookie
+
+  schemas:
+    UserProfile:
+      type: object
+      properties:
+        uid:
+          type: string
+          description: ユーザーID
+          example: "user123"
+        username:
+          type: string
+          description: 表示名
+          example: "田中太郎"
+        handle:
+          type: string
+          description: ハンドル名
+          example: "@tanaka"
+        isAdmin:
+          type: boolean
+          description: 管理者フラグ
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: アカウント作成日時
+        lastActivityAt:
+          type: string
+          format: date-time
+          description: 最終アクティビティ日時
+
+    QuizSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: クイズID
+          example: "quiz123"
+        title:
+          type: string
+          description: クイズタイトル
+          example: "英語基礎文法テスト"
+        description:
+          type: string
+          description: クイズ説明
+          example: "基本的な英語の文法問題を集めたテストです。"
+        visibility:
+          type: string
+          enum: [public, private]
+          description: 公開設定
+          example: "public"
+        questionCount:
+          type: integer
+          description: 問題数
+          example: 10
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+
+    QuizAttempt:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 実行ID
+          example: "attempt123"
+        quizId:
+          type: string
+          description: クイズID
+          example: "quiz456"
+        quizTitle:
+          type: string
+          description: クイズタイトル
+          example: "数学基礎問題"
+        score:
+          type: number
+          description: スコア
+          example: 85
+        totalQuestions:
+          type: integer
+          description: 総問題数
+          example: 10
+        correctAnswers:
+          type: integer
+          description: 正解数
+          example: 8
+        attemptedAt:
+          type: string
+          format: date-time
+          description: 開始日時
+        completedAt:
+          type: string
+          format: date-time
+          description: 完了日時
+
+    UserStats:
+      type: object
+      properties:
+        quizzesCreated:
+          type: integer
+          description: 作成クイズ数
+          example: 5
+        publicQuizzes:
+          type: integer
+          description: 公開クイズ数
+          example: 3
+        privateQuizzes:
+          type: integer
+          description: プライベートクイズ数
+          example: 2
+        totalAttempts:
+          type: integer
+          description: 総実行回数
+          example: 25
+        completedAttempts:
+          type: integer
+          description: 完了回数
+          example: 23
+        averageScore:
+          type: number
+          description: 平均スコア
+          example: 78.5
+        generatedAt:
+          type: string
+          format: date-time
+          description: 統計生成日時
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          description: レスポンスデータ
+        timestamp:
+          type: string
+          format: date-time
+          description: レスポンス生成日時
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: エラーメッセージ
+        timestamp:
+          type: string
+          format: date-time
+          description: レスポンス生成日時
+
+  responses:
+    BadRequest:
+      description: 不正なリクエスト
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ErrorResponse'
+              - type: object
+                properties:
+                  error:
+                    example: "Action parameter is required"
+
+    Unauthorized:
+      description: 認証が必要
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ErrorResponse'
+              - type: object
+                properties:
+                  error:
+                    example: "Authentication required"
+
+    NotFound:
+      description: リソースが見つからない
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ErrorResponse'
+              - type: object
+                properties:
+                  error:
+                    example: "User not found"
+
+    DatabaseUnavailable:
+      description: データベース利用不可
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ErrorResponse'
+              - type: object
+                properties:
+                  error:
+                    example: "Database not available"
+
+tags:
+  - name: 公開API
+    description: 認証不要でアクセス可能なAPI
+  - name: Google Apps Script
+    description: Google Apps Scriptとの連携API
+  - name: ユーザーAPI
+    description: 認証が必要なユーザー関連API
+  - name: 認証
+    description: ログイン・ログアウト関連
+  - name: クイズ
+    description: クイズの実行・回答提出

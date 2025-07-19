@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - Synapse Note</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .nav {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #667eea;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #764ba2;
+        }
+
+        .content {
+            padding: 2rem 0;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+        .sidebar h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .sidebar ul {
+            list-style: none;
+        }
+
+        .sidebar ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar ul li a {
+            text-decoration: none;
+            color: #555;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        .sidebar ul li a:hover {
+            color: #667eea;
+        }
+
+        .main-content {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .section h2 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .endpoint {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-right: 1rem;
+        }
+
+        .method.get { background-color: #28a745; color: white; }
+        .method.post { background-color: #007bff; color: white; }
+        .method.put { background-color: #ffc107; color: black; }
+        .method.delete { background-color: #dc3545; color: white; }
+
+        .endpoint-path {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .auth-badge {
+            background-color: #fd7e14;
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-left: auto;
+        }
+
+        .auth-badge.public {
+            background-color: #28a745;
+        }
+
+        .endpoint-description {
+            margin-bottom: 1rem;
+            color: #666;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+        }
+
+        .try-it-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+
+        .try-it-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .try-it-section {
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .try-it-section.active {
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-weight: 500;
+        }
+
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        .response-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 4px;
+        }
+
+        .status-code {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-200 { background-color: #d4edda; color: #155724; }
+        .status-400 { background-color: #f8d7da; color: #721c24; }
+        .status-401 { background-color: #f8d7da; color: #721c24; }
+        .status-500 { background-color: #f8d7da; color: #721c24; }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .footer {
+            background: #2d3748;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>Synapse Note API Documentation</h1>
+            <p>包括的なAPIリファレンスとインタラクティブテスト</p>
+        </div>
+    </header>
+
+    <nav class="nav">
+        <div class="container">
+            <div class="nav-content">
+                <div class="nav-links">
+                    <a href="#overview">概要</a>
+                    <a href="#authentication">認証</a>
+                    <a href="#public-api">公開API</a>
+                    <a href="#user-api">ユーザーAPI</a>
+                    <a href="#quiz-api">クイズAPI</a>
+                    <a href="#admin-api">管理者API</a>
+                </div>
+                <% if (user) { %>
+                    <span>ログイン中: <%= user.username %></span>
+                <% } else { %>
+                    <a href="/login">ログイン</a>
+                <% } %>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="content">
+            <aside class="sidebar">
+                <h3>API Categories</h3>
+                <ul>
+                    <li><a href="#overview">概要</a></li>
+                    <li><a href="#authentication">認証</a></li>
+                    <li><a href="#public-api">公開API</a></li>
+                    <li><a href="#gas-api">Google Apps Script</a></li>
+                    <li><a href="#user-api">ユーザーAPI</a></li>
+                    <li><a href="#quiz-api">クイズAPI</a></li>
+                    <li><a href="#profile-api">プロフィールAPI</a></li>
+                    <li><a href="#admin-api">管理者API</a></li>
+                    <li><a href="#errors">エラーレスポンス</a></li>
+                </ul>
+            </aside>
+
+            <main class="main-content">
+                <section id="overview" class="section">
+                    <h2>概要</h2>
+                    <p>Synapse Note APIは、クイズ作成・実行プラットフォームのための包括的なREST APIです。</p>
+                    
+                    <h3>基本URL</h3>
+                    <div class="code-block">
+// 開発環境
+http://localhost:3000
+
+// 本番環境  
+https://your-domain.com
+                    </div>
+
+                    <h3>認証方式</h3>
+                    <p>セッションベース認証を使用。ログイン後、サーバーがセッションCookieを発行します。</p>
+                </section>
+
+                <section id="authentication" class="section">
+                    <h2>認証</h2>
+                    
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method post">POST</span>
+                            <span class="endpoint-path">/login</span>
+                            <span class="auth-badge public">認証不要</span>
+                        </div>
+                        <div class="endpoint-description">
+                            ユーザーログインを実行し、セッションを開始します。
+                        </div>
+                        
+                        <button class="try-it-btn" onclick="toggleTryIt(this)">試してみる</button>
+                        
+                        <div class="try-it-section">
+                            <div class="input-group">
+                                <label>ハンドル名:</label>
+                                <input type="text" id="login-handle" placeholder="@username">
+                            </div>
+                            <div class="input-group">
+                                <label>パスワード:</label>
+                                <input type="password" id="login-password" placeholder="password">
+                            </div>
+                            <button onclick="tryLogin()" class="try-it-btn">ログイン実行</button>
+                            <div class="response-section" id="login-response"></div>
+                        </div>
+                    </div>
+
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span class="endpoint-path">/logout</span>
+                            <span class="auth-badge public">認証不要</span>
+                        </div>
+                        <div class="endpoint-description">
+                            セッションを終了し、ログアウトします。
+                        </div>
+                        
+                        <button class="try-it-btn" onclick="tryLogout()">ログアウト実行</button>
+                    </div>
+                </section>
+
+                <section id="public-api" class="section">
+                    <h2>公開API</h2>
+                    
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span class="endpoint-path">/api/public/stats</span>
+                            <span class="auth-badge public">認証不要</span>
+                        </div>
+                        <div class="endpoint-description">
+                            システム全体の統計情報を取得します。
+                        </div>
+                        
+                        <button class="try-it-btn" onclick="tryApiCall('/api/public/stats', 'GET', null, 'stats-response')">試してみる</button>
+                        <div class="response-section" id="stats-response"></div>
+                        
+                        <h4>レスポンス例:</h4>
+                        <div class="code-block">
+{
+  "success": true,
+  "data": {
+    "totalUsers": 150,
+    "totalQuizzes": 89,
+    "totalAttempts": 2341,
+    "adminCount": 3,
+    "quizzesByVisibility": {
+      "public": 67,
+      "private": 22
+    },
+    "generatedAt": "2025-01-01T12:00:00.000Z"
+  },
+  "source": "local-database",
+  "timestamp": "2025-01-01T12:00:00.000Z"
+}
+                        </div>
+                    </div>
+
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span class="endpoint-path">/api/public/users/count</span>
+                            <span class="auth-badge public">認証不要</span>
+                        </div>
+                        <div class="endpoint-description">
+                            登録ユーザー数のみを取得します。
+                        </div>
+                        
+                        <button class="try-it-btn" onclick="tryApiCall('/api/public/users/count', 'GET', null, 'users-count-response')">試してみる</button>
+                        <div class="response-section" id="users-count-response"></div>
+                    </div>
+
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span class="endpoint-path">/api/public/quizzes/count</span>
+                            <span class="auth-badge public">認証不要</span>
+                        </div>
+                        <div class="endpoint-description">
+                            クイズ総数のみを取得します。
+                        </div>
+                        
+                        <button class="try-it-btn" onclick="tryApiCall('/api/public/quizzes/count', 'GET', null, 'quizzes-count-response')">試してみる</button>
+                        <div class="response-section" id="quizzes-count-response"></div>
+                    </div>
+                </section>
+
+                <section id="gas-api" class="section">
+                    <h2>Google Apps Script API</h2>
+                    
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span class="endpoint-path">/api/gas/ping</span>
+                            <span class="auth-badge public">認証不要</span>
+                        </div>
+                        <div class="endpoint-description">
+                            Google Apps Scriptとの接続をテストします。
+                        </div>
+                        
+                        <button class="try-it-btn" onclick="tryApiCall('/api/gas/ping', 'GET', null, 'gas-ping-response')">試してみる</button>
+                        <div class="response-section" id="gas-ping-response"></div>
+                    </div>
+                </section>
+
+                <section id="user-api" class="section">
+                    <h2>ユーザーAPI</h2>
+                    <p>以下のAPIには認証が必要です。</p>
+                    
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span class="endpoint-path">/api/user/profile</span>
+                            <span class="auth-badge">認証必要</span>
+                        </div>
+                        <div class="endpoint-description">
+                            現在のユーザーのプロフィール情報を取得します。
+                        </div>
+                        
+                        <button class="try-it-btn" onclick="tryApiCall('/api/user/profile', 'GET', null, 'user-profile-response')">試してみる</button>
+                        <div class="response-section" id="user-profile-response"></div>
+                    </div>
+
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span class="endpoint-path">/api/user/quizzes</span>
+                            <span class="auth-badge">認証必要</span>
+                        </div>
+                        <div class="endpoint-description">
+                            ユーザーが作成したクイズの一覧を取得します。
+                        </div>
+                        
+                        <button class="try-it-btn" onclick="tryApiCall('/api/user/quizzes', 'GET', null, 'user-quizzes-response')">試してみる</button>
+                        <div class="response-section" id="user-quizzes-response"></div>
+                    </div>
+
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span class="endpoint-path">/api/user/history</span>
+                            <span class="auth-badge">認証必要</span>
+                        </div>
+                        <div class="endpoint-description">
+                            ユーザーのクイズ実行履歴を取得します（最新50件）。
+                        </div>
+                        
+                        <button class="try-it-btn" onclick="tryApiCall('/api/user/history', 'GET', null, 'user-history-response')">試してみる</button>
+                        <div class="response-section" id="user-history-response"></div>
+                    </div>
+
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span class="endpoint-path">/api/user/stats</span>
+                            <span class="auth-badge">認証必要</span>
+                        </div>
+                        <div class="endpoint-description">
+                            ユーザーの統計情報を取得します。
+                        </div>
+                        
+                        <button class="try-it-btn" onclick="tryApiCall('/api/user/stats', 'GET', null, 'user-stats-response')">試してみる</button>
+                        <div class="response-section" id="user-stats-response"></div>
+                    </div>
+                </section>
+
+                <section id="quiz-api" class="section">
+                    <h2>クイズAPI</h2>
+                    
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method post">POST</span>
+                            <span class="endpoint-path">/quiz/submit</span>
+                            <span class="auth-badge public">認証不要</span>
+                        </div>
+                        <div class="endpoint-description">
+                            クイズの回答を提出します。
+                        </div>
+                        
+                        <button class="try-it-btn" onclick="toggleTryIt(this)">試してみる</button>
+                        
+                        <div class="try-it-section">
+                            <div class="input-group">
+                                <label>クイズID:</label>
+                                <input type="text" id="quiz-submit-id" placeholder="quiz123">
+                            </div>
+                            <div class="input-group">
+                                <label>回答 (JSON配列):</label>
+                                <input type="text" id="quiz-submit-answers" placeholder="[0, 1, 2, 0]">
+                            </div>
+                            <div class="input-group">
+                                <label>ユーザーID:</label>
+                                <input type="text" id="quiz-submit-user" placeholder="user123">
+                            </div>
+                            <button onclick="tryQuizSubmit()" class="try-it-btn">回答提出</button>
+                            <div class="response-section" id="quiz-submit-response"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="errors" class="section">
+                    <h2>エラーレスポンス</h2>
+                    
+                    <h3>一般的なエラー形式</h3>
+                    <div class="code-block">
+{
+  "success": false,
+  "error": "エラーメッセージ",
+  "timestamp": "2025-01-01T12:00:00.000Z"
+}
+                    </div>
+
+                    <h3>HTTPステータスコード</h3>
+                    <ul>
+                        <li><span class="status-code status-200">200</span> 成功</li>
+                        <li><span class="status-code status-400">400</span> 不正なリクエスト</li>
+                        <li><span class="status-code status-401">401</span> 認証が必要</li>
+                        <li><span class="status-code status-403">403</span> アクセス権限なし</li>
+                        <li><span class="status-code status-404">404</span> リソースが見つからない</li>
+                        <li><span class="status-code status-500">500</span> サーバー内部エラー</li>
+                        <li><span class="status-code status-500">503</span> サービス利用不可</li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Synapse Note. API Documentation v1.0.0</p>
+        </div>
+    </footer>
+
+    <script>
+        function toggleTryIt(button) {
+            const tryItSection = button.nextElementSibling;
+            if (tryItSection && tryItSection.classList.contains('try-it-section')) {
+                tryItSection.classList.toggle('active');
+                button.textContent = tryItSection.classList.contains('active') ? '隠す' : '試してみる';
+            }
+        }
+
+        async function tryApiCall(endpoint, method, data, responseId) {
+            const responseDiv = document.getElementById(responseId);
+            responseDiv.innerHTML = '<div style="padding: 1rem;">Loading...</div>';
+
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(endpoint, options);
+                const result = await response.json();
+
+                const statusClass = response.ok ? 'status-200' : `status-${response.status}`;
+                responseDiv.innerHTML = `
+                    <div class="status-code ${statusClass}">${response.status} ${response.statusText}</div>
+                    <pre style="margin-top: 0.5rem; white-space: pre-wrap;">${JSON.stringify(result, null, 2)}</pre>
+                `;
+            } catch (error) {
+                responseDiv.innerHTML = `
+                    <div class="status-code status-500">Error</div>
+                    <pre style="margin-top: 0.5rem; color: #dc3545;">${error.message}</pre>
+                `;
+            }
+        }
+
+        async function tryLogin() {
+            const handle = document.getElementById('login-handle').value;
+            const password = document.getElementById('login-password').value;
+            const responseDiv = document.getElementById('login-response');
+
+            if (!handle || !password) {
+                responseDiv.innerHTML = '<div style="color: #dc3545;">ハンドル名とパスワードを入力してください。</div>';
+                return;
+            }
+
+            responseDiv.innerHTML = '<div style="padding: 1rem;">ログイン中...</div>';
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        handle: handle,
+                        password: password
+                    })
+                });
+
+                if (response.redirected) {
+                    responseDiv.innerHTML = `
+                        <div class="status-code status-200">200 Login Successful</div>
+                        <div style="margin-top: 0.5rem;">ログイン成功！ページをリロードしてください。</div>
+                    `;
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    responseDiv.innerHTML = `
+                        <div class="status-code status-400">400 Login Failed</div>
+                        <div style="margin-top: 0.5rem;">ログインに失敗しました。ハンドル名とパスワードを確認してください。</div>
+                    `;
+                }
+            } catch (error) {
+                responseDiv.innerHTML = `
+                    <div class="status-code status-500">Error</div>
+                    <pre style="margin-top: 0.5rem; color: #dc3545;">${error.message}</pre>
+                `;
+            }
+        }
+
+        function tryLogout() {
+            window.location.href = '/logout';
+        }
+
+        async function tryQuizSubmit() {
+            const quizId = document.getElementById('quiz-submit-id').value;
+            const answersStr = document.getElementById('quiz-submit-answers').value;
+            const userId = document.getElementById('quiz-submit-user').value;
+
+            try {
+                const answers = JSON.parse(answersStr);
+                const data = {
+                    quizId: quizId,
+                    answers: answers,
+                    userId: userId,
+                    startTime: new Date(Date.now() - 600000).toISOString(), // 10分前
+                    endTime: new Date().toISOString()
+                };
+
+                await tryApiCall('/quiz/submit', 'POST', data, 'quiz-submit-response');
+            } catch (error) {
+                document.getElementById('quiz-submit-response').innerHTML = `
+                    <div class="status-code status-400">400 Invalid Input</div>
+                    <pre style="margin-top: 0.5rem; color: #dc3545;">回答は有効なJSON配列で入力してください（例: [0, 1, 2, 0]）</pre>
+                `;
+            }
+        }
+
+        // Smooth scrolling for navigation links
+        document.addEventListener('DOMContentLoaded', function() {
+            const links = document.querySelectorAll('a[href^="#"]');
+            links.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
