@@ -182,4 +182,12 @@ router.get('/public-quizzes', async (req, res) => {
     }
 });
 
+/**
+ * FastServer-List Demo Page
+ * 高性能なクイズ一覧表示のデモンストレーションページ
+ */
+router.get('/fastserver-list', (req, res) => {
+    res.render('fastserver-list', { user: req.session?.user || null });
+});
+
 module.exports = router;

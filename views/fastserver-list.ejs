@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastServer-List - Synapse Note</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .quiz-card {
+            transition: transform 0.2s;
+        }
+        .quiz-card:hover {
+            transform: translateY(-2px);
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        .filter-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .search-results-info {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <%- include('./partials/header', { title: 'FastServer-List Demo' }) %>
+    
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">
+                    <i class="fas fa-rocket text-primary"></i>
+                    FastServer-List Demo
+                </h1>
+                <p class="lead">高性能なクイズ一覧表示のデモンストレーション</p>
+            </div>
+        </div>
+        
+        <!-- フィルター・検索セクション -->
+        <div class="filter-section">
+            <div class="row">
+                <div class="col-md-4">
+                    <label for="searchInput" class="form-label">
+                        <i class="fas fa-search"></i> 検索
+                    </label>
+                    <input type="text" class="form-control" id="searchInput" placeholder="クイズタイトル、説明、科目で検索...">
+                </div>
+                <div class="col-md-2">
+                    <label for="visibilityFilter" class="form-label">公開設定</label>
+                    <select class="form-select" id="visibilityFilter">
+                        <option value="public">公開</option>
+                        <option value="unlisted">非公開</option>
+                        <option value="all">すべて</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="subjectFilter" class="form-label">科目</label>
+                    <select class="form-select" id="subjectFilter">
+                        <option value="">すべて</option>
+                        <option value="英語">英語</option>
+                        <option value="数学">数学</option>
+                        <option value="理科">理科</option>
+                        <option value="社会">社会</option>
+                        <option value="国語">国語</option>
+                        <option value="その他">その他</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="sortBy" class="form-label">ソート</label>
+                    <select class="form-select" id="sortBy">
+                        <option value="createdAt">作成日</option>
+                        <option value="title">タイトル</option>
+                        <option value="updatedAt">更新日</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="limitSelect" class="form-label">表示件数</label>
+                    <select class="form-select" id="limitSelect">
+                        <option value="10">10件</option>
+                        <option value="20" selected>20件</option>
+                        <option value="50">50件</option>
+                        <option value="100">100件</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button class="btn btn-primary" id="searchButton">
+                        <i class="fas fa-search"></i> 検索
+                    </button>
+                    <button class="btn btn-secondary" id="resetButton">
+                        <i class="fas fa-undo"></i> リセット
+                    </button>
+                    <div class="form-check form-check-inline ms-3">
+                        <input class="form-check-input" type="checkbox" id="includeOwner">
+                        <label class="form-check-label" for="includeOwner">
+                            作成者情報を含める
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 検索結果情報 -->
+        <div id="searchInfo" class="search-results-info"></div>
+        
+        <!-- クイズ一覧 -->
+        <div id="quizList" class="row">
+            <!-- クイズカードがここに動的に追加されます -->
+        </div>
+        
+        <!-- ローディング表示 -->
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">読み込み中...</span>
+            </div>
+            <p class="mt-2">クイズを読み込み中...</p>
+        </div>
+        
+        <!-- ページネーション -->
+        <nav aria-label="クイズ一覧ページネーション" class="mt-4">
+            <ul class="pagination justify-content-center" id="pagination">
+                <!-- ページネーションボタンがここに動的に追加されます -->
+            </ul>
+        </nav>
+        
+        <!-- パフォーマンス情報 -->
+        <div class="mt-4 p-3 bg-light border rounded">
+            <h5><i class="fas fa-chart-line"></i> パフォーマンス情報</h5>
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>読み込み時間:</strong> <span id="loadTime">-</span>ms
+                </div>
+                <div class="col-md-3">
+                    <strong>表示件数:</strong> <span id="displayCount">-</span>
+                </div>
+                <div class="col-md-3">
+                    <strong>現在ページ:</strong> <span id="currentPage">-</span>
+                </div>
+                <div class="col-md-3">
+                    <strong>キャッシュ:</strong> <span id="cacheStatus">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <%- include('./partials/footer') %>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        class FastServerList {
+            constructor() {
+                this.currentPage = 1;
+                this.isLoading = false;
+                this.bindEvents();
+                this.loadQuizzes();
+            }
+            
+            bindEvents() {
+                document.getElementById('searchButton').addEventListener('click', () => this.search());
+                document.getElementById('resetButton').addEventListener('click', () => this.reset());
+                document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.search();
+                });
+            }
+            
+            async loadQuizzes(page = 1) {
+                if (this.isLoading) return;
+                
+                this.isLoading = true;
+                const startTime = Date.now();
+                
+                try {
+                    this.showLoading(true);
+                    
+                    const params = new URLSearchParams({
+                        page: page,
+                        limit: document.getElementById('limitSelect').value,
+                        search: document.getElementById('searchInput').value,
+                        visibility: document.getElementById('visibilityFilter').value,
+                        subject: document.getElementById('subjectFilter').value,
+                        sortBy: document.getElementById('sortBy').value,
+                        includeOwner: document.getElementById('includeOwner').checked
+                    });
+                    
+                    const response = await fetch(`/api/fastserver/quizzes?${params}`);
+                    const data = await response.json();
+                    
+                    const loadTime = Date.now() - startTime;
+                    
+                    if (data.success) {
+                        this.renderQuizzes(data.data.quizzes);
+                        this.renderPagination(data.data.pagination);
+                        this.updateSearchInfo(data.data);
+                        this.updatePerformanceInfo(loadTime, data.data);
+                        this.currentPage = page;
+                    } else {
+                        this.showError(data.error || 'クイズの読み込みに失敗しました。');
+                    }
+                } catch (error) {
+                    console.error('Load error:', error);
+                    this.showError('通信エラーが発生しました。');
+                } finally {
+                    this.showLoading(false);
+                    this.isLoading = false;
+                }
+            }
+            
+            renderQuizzes(quizzes) {
+                const container = document.getElementById('quizList');
+                
+                if (quizzes.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12 text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h5>クイズが見つかりませんでした</h5>
+                            <p class="text-muted">検索条件を変更してお試しください。</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = quizzes.map(quiz => `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card quiz-card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">${this.escapeHtml(quiz.title)}</h5>
+                                <p class="card-text text-muted small">
+                                    ${quiz.description ? this.escapeHtml(quiz.description.substring(0, 100)) + '...' : '説明なし'}
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge bg-primary">${quiz.subject}</span>
+                                        <span class="badge bg-secondary">${quiz.difficulty}</span>
+                                    </div>
+                                    <small class="text-muted">${quiz.questionCount}問</small>
+                                </div>
+                                ${quiz.owner ? `
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user"></i> ${this.escapeHtml(quiz.owner.handle || quiz.owner.username)}
+                                        </small>
+                                    </div>
+                                ` : ''}
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        作成: ${new Date(quiz.createdAt.seconds * 1000).toLocaleDateString()}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/quiz/${quiz.id}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-play"></i> 挑戦する
+                                </a>
+                                <span class="badge ${quiz.visibility === 'public' ? 'bg-success' : 'bg-warning text-dark'} float-end">
+                                    ${quiz.visibility === 'public' ? '公開' : '非公開'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            renderPagination(pagination) {
+                const container = document.getElementById('pagination');
+                const { page, hasMore, totalPages } = pagination;
+                
+                let html = '';
+                
+                // 前へボタン
+                if (page > 1) {
+                    html += `
+                        <li class="page-item">
+                            <a class="page-link" href="#" onclick="fastServerList.loadQuizzes(${page - 1})">前へ</a>
+                        </li>
+                    `;
+                }
+                
+                // ページ番号
+                const maxVisible = 5;
+                let startPage = Math.max(1, page - Math.floor(maxVisible / 2));
+                let endPage = totalPages ? Math.min(totalPages, startPage + maxVisible - 1) : startPage + maxVisible - 1;
+                
+                if (totalPages && endPage - startPage < maxVisible - 1) {
+                    startPage = Math.max(1, endPage - maxVisible + 1);
+                }
+                
+                for (let i = startPage; i <= endPage; i++) {
+                    if (totalPages && i > totalPages) break;
+                    
+                    html += `
+                        <li class="page-item ${i === page ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="fastServerList.loadQuizzes(${i})">${i}</a>
+                        </li>
+                    `;
+                    
+                    if (!totalPages && i === endPage && hasMore) {
+                        html += `
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        `;
+                    }
+                }
+                
+                // 次へボタン
+                if (hasMore) {
+                    html += `
+                        <li class="page-item">
+                            <a class="page-link" href="#" onclick="fastServerList.loadQuizzes(${page + 1})">次へ</a>
+                        </li>
+                    `;
+                }
+                
+                container.innerHTML = html;
+            }
+            
+            updateSearchInfo(data) {
+                const info = document.getElementById('searchInfo');
+                const { quizzes, pagination, filters } = data;
+                
+                let text = `${quizzes.length}件のクイズを表示中`;
+                if (pagination.totalCount) {
+                    text += ` (全${pagination.totalCount}件中)`;
+                }
+                if (filters.search) {
+                    text += ` - 検索: "${filters.search}"`;
+                }
+                
+                info.textContent = text;
+            }
+            
+            updatePerformanceInfo(loadTime, data) {
+                document.getElementById('loadTime').textContent = loadTime;
+                document.getElementById('displayCount').textContent = data.quizzes.length;
+                document.getElementById('currentPage').textContent = data.pagination.page;
+                document.getElementById('cacheStatus').textContent = loadTime < 100 ? 'HIT' : 'MISS';
+            }
+            
+            showLoading(show) {
+                document.getElementById('loading').style.display = show ? 'block' : 'none';
+            }
+            
+            showError(message) {
+                const container = document.getElementById('quizList');
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            ${this.escapeHtml(message)}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            search() {
+                this.currentPage = 1;
+                this.loadQuizzes(1);
+            }
+            
+            reset() {
+                document.getElementById('searchInput').value = '';
+                document.getElementById('visibilityFilter').value = 'public';
+                document.getElementById('subjectFilter').value = '';
+                document.getElementById('sortBy').value = 'createdAt';
+                document.getElementById('limitSelect').value = '20';
+                document.getElementById('includeOwner').checked = false;
+                this.search();
+            }
+            
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+        
+        // Initialize the FastServer-List
+        const fastServerList = new FastServerList();
+    </script>
+</body>
+</html>
