@@ -182,4 +182,19 @@ router.get('/public-quizzes', async (req, res) => {
     }
 });
 
+/**
+ * APIドキュメントページの表示
+ * 
+ * 機能:
+ * - インタラクティブなAPIドキュメントページを表示
+ * - 各エンドポイントの試用機能を提供
+ * - 認証不要でアクセス可能
+ */
+router.get('/api-docs', (req, res) => {
+    res.render('api-docs', { 
+        title: 'API Documentation - Synapse Note',
+        user: req.session?.user || null 
+    });
+});
+
 module.exports = router;

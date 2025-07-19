@@ -489,4 +489,25 @@ router.get('/docs', (req, res) => {
     res.json(apiDocs);
 });
 
+// OpenAPI/Swagger仕様をJSONで提供
+router.get('/openapi.json', (req, res) => {
+    const fs = require('fs');
+    const yaml = require('js-yaml');
+    const path = require('path');
+    
+    try {
+        const yamlPath = path.join(__dirname, '..', 'openapi.yaml');
+        const yamlContent = fs.readFileSync(yamlPath, 'utf8');
+        const openApiSpec = yaml.load(yamlContent);
+        res.json(openApiSpec);
+    } catch (error) {
+        console.error('Error loading OpenAPI spec:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load OpenAPI specification',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 module.exports = router;
