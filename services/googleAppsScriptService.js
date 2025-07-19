@@ -59,6 +59,19 @@ class GoogleAppsScriptService {
 
                 res.on('end', () => {
                     try {
+                        // Check if response is HTML (redirect page) instead of JSON
+                        const trimmedBody = body.trim();
+                        const isHtml = trimmedBody.toLowerCase().includes('<html') || 
+                                      trimmedBody.toLowerCase().includes('<!doctype') ||
+                                      trimmedBody.toLowerCase().includes('moved temporarily') ||
+                                      trimmedBody.toLowerCase().includes('moved permanently');
+                        
+                        if (isHtml || res.statusCode >= 300) {
+                            // This is likely a redirect page or error page, not valid JSON
+                            reject(new Error(`Google Apps Script returned invalid response: ${res.statusCode} ${trimmedBody.substring(0, 100)}...`));
+                            return;
+                        }
+
                         const response = body ? JSON.parse(body) : {};
                         resolve({
                             statusCode: res.statusCode,
@@ -66,11 +79,8 @@ class GoogleAppsScriptService {
                             headers: res.headers
                         });
                     } catch (error) {
-                        resolve({
-                            statusCode: res.statusCode,
-                            data: { message: body },
-                            headers: res.headers
-                        });
+                        // If JSON parsing fails, it's likely not a valid API response
+                        reject(new Error(`Google Apps Script returned invalid JSON: ${error.message}`));
                     }
                 });
             });
