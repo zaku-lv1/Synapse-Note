@@ -72,7 +72,7 @@ function requireAuth(req, res, next) {
 // --- 公開API (認証不要) ---
 
 // システム全体の統計情報を取得
-router.get('/public/stats', requireDatabase, async (req, res) => {
+router.get('/public/stats', async (req, res) => {
     try {
         // First try to get stats from Google Apps Script
         let useGoogleAppsScript = process.env.USE_GOOGLE_APPS_SCRIPT !== 'false';
@@ -90,7 +90,17 @@ router.get('/public/stats', requireDatabase, async (req, res) => {
         }
 
         // Fallback to local database
-        const db = req.db;
+        const db = getDb();
+        if (!db) {
+            const errorMessage = useGoogleAppsScript 
+                ? 'Database not available and Google Apps Script failed'
+                : 'Database not available and Google Apps Script is disabled';
+            return res.status(503).json({
+                success: false,
+                error: errorMessage,
+                timestamp: new Date().toISOString()
+            });
+        }
         
         // 並列でデータを取得
         const [usersSnapshot, quizzesSnapshot, attemptsSnapshot] = await Promise.all([
@@ -141,7 +151,7 @@ router.get('/public/stats', requireDatabase, async (req, res) => {
 });
 
 // 登録ユーザー数のみ取得
-router.get('/public/users/count', requireDatabase, async (req, res) => {
+router.get('/public/users/count', async (req, res) => {
     try {
         // First try to get user count from Google Apps Script
         let useGoogleAppsScript = process.env.USE_GOOGLE_APPS_SCRIPT !== 'false';
@@ -159,7 +169,18 @@ router.get('/public/users/count', requireDatabase, async (req, res) => {
         }
 
         // Fallback to local database
-        const db = req.db;
+        const db = getDb();
+        if (!db) {
+            const errorMessage = useGoogleAppsScript 
+                ? 'Database not available and Google Apps Script failed'
+                : 'Database not available and Google Apps Script is disabled';
+            return res.status(503).json({
+                success: false,
+                error: errorMessage,
+                timestamp: new Date().toISOString()
+            });
+        }
+        
         const usersSnapshot = await db.collection('users').get();
         
         res.json({
@@ -177,7 +198,7 @@ router.get('/public/users/count', requireDatabase, async (req, res) => {
 });
 
 // クイズ総数のみ取得
-router.get('/public/quizzes/count', requireDatabase, async (req, res) => {
+router.get('/public/quizzes/count', async (req, res) => {
     try {
         // First try to get quiz count from Google Apps Script
         let useGoogleAppsScript = process.env.USE_GOOGLE_APPS_SCRIPT !== 'false';
@@ -195,7 +216,18 @@ router.get('/public/quizzes/count', requireDatabase, async (req, res) => {
         }
 
         // Fallback to local database
-        const db = req.db;
+        const db = getDb();
+        if (!db) {
+            const errorMessage = useGoogleAppsScript 
+                ? 'Database not available and Google Apps Script failed'
+                : 'Database not available and Google Apps Script is disabled';
+            return res.status(503).json({
+                success: false,
+                error: errorMessage,
+                timestamp: new Date().toISOString()
+            });
+        }
+        
         const quizzesSnapshot = await db.collection('quizzes').get();
         
         res.json({
