@@ -2028,3 +2028,170 @@ footer {
     font-size: 0.85rem;
   }
 }
+
+/* =====================================================================================
+   Match System Styles (BO3/BO5 Tournament Features)
+   ===================================================================================== */
+
+/* Match Card Special Styling */
+.action-card.match-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.action-card.match-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.action-card.match-card .card-icon svg {
+  color: white;
+}
+
+.card-badges {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Match Format Badges */
+.format-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.format-badge.bo3 {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.format-badge.bo5 {
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+  color: white;
+}
+
+/* Match Status Indicators */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-indicator.waiting {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.status-indicator.in-progress {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.status-indicator.completed {
+  background: #e2e3e5;
+  color: #383d41;
+  border: 1px solid #d6d8db;
+}
+
+/* Match Round Progress */
+.round-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.round-indicator {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.875rem;
+  position: relative;
+}
+
+.round-indicator.completed {
+  background: var(--correct-color);
+  color: white;
+}
+
+.round-indicator.current {
+  background: var(--primary-color);
+  color: white;
+}
+
+.round-indicator.pending {
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 2px solid #dee2e6;
+}
+
+.round-indicator:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 2px;
+  background: #dee2e6;
+}
+
+/* Match Winner Highlight */
+.match-winner {
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  color: #333;
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  text-align: center;
+  border: 2px solid #f1c40f;
+  margin: 1rem 0;
+}
+
+.match-winner .trophy {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Responsive Match Styles */
+@media (max-width: 768px) {
+  .card-badges {
+    justify-content: center;
+  }
+  
+  .round-progress {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .round-indicator:not(:last-child)::after {
+    display: none;
+  }
+}
