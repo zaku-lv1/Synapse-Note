@@ -11,14 +11,15 @@ const express = require('express');
 const router = express.Router();
 const admin = require('firebase-admin');
 const bcrypt = require('bcrypt');
+const firebase = require('../config/firebase');
 
-// Firestore データベースインスタンス (lazy initialization)
+// Firestore データベースインスタンス (lazy initialization with mock fallback)
 function getDb() {
     try {
         return admin.firestore();
     } catch (error) {
-        console.error('Firebase not initialized:', error.message);
-        return null;
+        console.log('Firebase not initialized, using mock database:', error.message);
+        return firebase.getDb();
     }
 }
 
@@ -27,9 +28,11 @@ const saltRounds = 10;
 // 管理者認証ミドルウェア
 function requireAdmin(req, res, next) {
     // Development mode fallback when database is not available
-    if (!getDb() && process.env.NODE_ENV === 'development') {
+    const db = getDb();
+    if (!firebase.isFirebaseAvailable() && process.env.NODE_ENV === 'development') {
         // Create a temporary admin session for development/testing
         if (!req.session.user) {
+            console.log('Creating development admin session');
             req.session.user = {
                 uid: 'dev-admin',
                 username: 'Development Admin',
@@ -67,6 +70,16 @@ router.get('/', requireAdmin, async (req, res) => {
         const quizzesSnapshot = await db.collection('quizzes').get();
         const attemptsSnapshot = await db.collection('quiz_attempts').get();
 
+        // トーナメント情報も取得 (if available)
+        let tournamentsSnapshot;
+        try {
+            tournamentsSnapshot = await db.collection('tournaments').get();
+            console.log(`Tournaments loaded: ${tournamentsSnapshot.size}`);
+        } catch (error) {
+            console.warn('Tournaments collection not available:', error.message);
+            tournamentsSnapshot = { size: 0, docs: [] };
+        }
+
         // システム設定を取得
         const settingsDoc = await db.collection('system_settings').doc('general').get();
         const settings = settingsDoc.exists ? settingsDoc.data() : { 
@@ -78,6 +91,7 @@ router.get('/', requireAdmin, async (req, res) => {
             totalUsers: usersSnapshot.size,
             totalQuizzes: quizzesSnapshot.size,
             totalAttempts: attemptsSnapshot.size,
+            totalTournaments: tournamentsSnapshot.size,
             adminCount: usersSnapshot.docs.filter(doc => doc.data().isAdmin).length
         };
 
@@ -528,6 +542,84 @@ router.post('/cleanup', requireAdmin, async (req, res) => {
     } catch (error) {
         console.error("Manual cleanup error:", error);
         res.redirect('/admin/settings?error=クリーンアップ中にエラーが発生しました。');
+    }
+});
+
+// トーナメント管理ページ
+router.get('/tournaments', requireAdmin, async (req, res) => {
+    try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
+        const tournamentsSnapshot = await db.collection('tournaments').get();
+        console.log(`Tournaments loaded: ${tournamentsSnapshot.size}`);
+        
+        const tournaments = tournamentsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        res.render('admin/tournaments', { 
+            user: req.session.user, 
+            tournaments 
+        });
+    } catch (error) {
+        console.error("Admin tournaments error:", error);
+        res.status(500).render('error', { 
+            message: 'トーナメント一覧の読み込み中にエラーが発生しました。',
+            user: req.session.user 
+        });
+    }
+});
+
+// マッチ結果管理ページ
+router.get('/matches', requireAdmin, async (req, res) => {
+    try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
+        // First load tournaments
+        const tournamentsSnapshot = await db.collection('tournaments').get();
+        console.log(`Tournaments loaded: ${tournamentsSnapshot.size}`);
+        
+        // Then load match results
+        try {
+            const matchesSnapshot = await db.collection('matches').get();
+            console.log(`Match results loaded: ${matchesSnapshot.size}`);
+            
+            const matches = matchesSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            res.render('admin/matches', { 
+                user: req.session.user, 
+                matches,
+                tournaments: tournamentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+            });
+        } catch (error) {
+            console.error("Error loading match results:", error);
+            res.status(500).render('error', { 
+                message: `マッチ結果の読み込み中にエラーが発生しました: ${error.message}`,
+                user: req.session.user 
+            });
+        }
+    } catch (error) {
+        console.error("Admin matches error:", error);
+        res.status(500).render('error', { 
+            message: 'マッチ管理ページの読み込み中にエラーが発生しました。',
+            user: req.session.user 
+        });
     }
 });
 
