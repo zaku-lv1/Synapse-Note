@@ -1,7 +1,7 @@
 {
-  "name": "synapse-note",
+  "name": "identityv-match",
   "version": "1.0.0",
-  "description": "An application for generating and grading English and Japanese language quizzes using Gemini.",
+  "description": "IdentityV Match - An application for generating and grading quizzes using AI.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

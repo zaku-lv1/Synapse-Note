@@ -42,7 +42,7 @@ class GoogleAppsScriptService {
                 method: method,
                 headers: {
                     'Content-Type': 'application/json',
-                    'User-Agent': 'Synapse-Note/1.0.0'
+                    'User-Agent': 'IdentityV-Match/1.0.0'
                 }
             };
 

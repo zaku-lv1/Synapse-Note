@@ -1,5 +1,5 @@
 /**
- * Synapse Note - Frontend JavaScript
+ * IdentityV Match - Frontend JavaScript
  * 
  * このファイルはクライアントサイドのJavaScript機能を提供します：
  * - モバイルナビゲーションのハンバーガーメニュー制御

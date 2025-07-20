@@ -1,5 +1,5 @@
 /**
- * Synapse Note - Manual Quiz Creation JavaScript
+ * IdentityV Match - Manual Quiz Creation JavaScript
  * 
  * このファイルは手動クイズ作成ページの動的機能を提供します：
  * - 問題の追加・削除・編集

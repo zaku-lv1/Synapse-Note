@@ -1,4 +1,4 @@
-const CACHE_NAME = 'synapse-note-cache-v1';
+const CACHE_NAME = 'identityv-match-cache-v1';
 const urlsToCache = [
   '/css/style.css',
   '/js/main.js',

@@ -298,7 +298,7 @@ app.use((req, res) => {
 // 4. サーバーの起動
 // ----------------------------------------------------------------
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Synapse Note server is running on port ${PORT}`);
+    console.log(`IdentityV Match server is running on port ${PORT}`);
     if (process.env.NODE_ENV !== 'production') {
         console.log(`Local access: http://localhost:${PORT}`);
     }

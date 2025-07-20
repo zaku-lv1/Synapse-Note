@@ -1,5 +1,5 @@
 /**
- * Synapse Note - メインルートハンドラー
+ * IdentityV Match - メインルートハンドラー
  * 
  * このファイルはアプリケーションの主要なルーティングを管理します：
  * - ホームページの表示制御（ログイン状態に応じたリダイレクト）
@@ -192,7 +192,7 @@ router.get('/public-quizzes', async (req, res) => {
  */
 router.get('/api-docs', (req, res) => {
     res.render('api-docs', { 
-        title: 'API Documentation - Synapse Note',
+        title: 'API Documentation - IdentityV Match',
         user: req.session?.user || null 
     });
 });

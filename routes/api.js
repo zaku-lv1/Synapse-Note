@@ -1,5 +1,5 @@
 /**
- * api.js - API routes for Synapse Note
+ * api.js - API routes for IdentityV Match
  * 
  * Public APIs (no authentication):
  * - GET /api/public/stats - System statistics
@@ -491,7 +491,7 @@ router.get('/user/stats', requireDatabase, requireAuth, async (req, res) => {
 // --- API ドキュメント (開発用) ---
 router.get('/docs', (req, res) => {
     const apiDocs = {
-        title: 'Synapse Note API Documentation',
+        title: 'IdentityV Match API Documentation',
         version: '1.0.0',
         endpoints: {
             public: {
