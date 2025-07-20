@@ -1,0 +1,292 @@
+<%- include('partials/header') %>
+
+<div class="matches-container">
+    <div class="page-header">
+        <h2 class="page-title">試合一覧</h2>
+        <a href="/quiz/create-match" class="btn btn-primary">新しい試合を作成</a>
+    </div>
+    
+    <% if (error) { %>
+        <div class="error-message"><%= error %></div>
+    <% } %>
+    
+    <% if (matches.length === 0) { %>
+        <div class="no-matches">
+            <div class="empty-state">
+                <h3>試合がありません</h3>
+                <p>BO3やBO5形式の試合を作成して、他のユーザーと競い合いましょう！</p>
+                <a href="/quiz/create-match" class="btn btn-primary">最初の試合を作成</a>
+            </div>
+        </div>
+    <% } else { %>
+        <div class="matches-grid">
+            <% matches.forEach(match => { %>
+                <div class="match-card <%= match.status %>">
+                    <div class="match-header">
+                        <h3 class="match-title"><%= match.title %></h3>
+                        <span class="match-format <%= match.format.toLowerCase() %>"><%= match.format %></span>
+                    </div>
+                    
+                    <div class="match-info">
+                        <div class="match-status">
+                            <span class="status-badge <%= match.status %>">
+                                <% if (match.status === 'waiting') { %>
+                                    待機中
+                                <% } else if (match.status === 'in_progress') { %>
+                                    進行中
+                                <% } else if (match.status === 'completed') { %>
+                                    完了
+                                <% } %>
+                            </span>
+                        </div>
+                        
+                        <div class="match-participants">
+                            <strong>参加者:</strong>
+                            <% if (match.participants.length === 1) { %>
+                                あなた (対戦相手待ち)
+                            <% } else { %>
+                                <%= match.participants.length %>人
+                            <% } %>
+                        </div>
+                        
+                        <% if (match.status === 'in_progress' && match.rounds && match.rounds.length > 0) { %>
+                            <div class="match-progress">
+                                <strong>進行状況:</strong> ラウンド <%= match.rounds.length %> / <%= match.format === 'BO3' ? '最大5' : '最大9' %>
+                            </div>
+                        <% } %>
+                        
+                        <% if (match.status === 'completed' && match.winner) { %>
+                            <div class="match-winner">
+                                <strong>勝者:</strong> 
+                                <% if (match.winner === user.uid) { %>
+                                    <span class="winner-you">あなた</span>
+                                <% } else { %>
+                                    <span class="winner-other">相手</span>
+                                <% } %>
+                            </div>
+                        <% } %>
+                        
+                        <div class="match-date">
+                            作成日: <%= match.createdAt ? match.createdAt.toLocaleDateString('ja-JP') : '不明' %>
+                        </div>
+                    </div>
+                    
+                    <div class="match-actions">
+                        <a href="/quiz/match/<%= match.id %>" class="btn btn-primary btn-sm">詳細を見る</a>
+                        
+                        <% if (match.status === 'in_progress') { %>
+                            <% if (match.currentRound < match.quizzes.length && match.rounds.length < (match.format === 'BO3' ? 5 : 9)) { %>
+                                <a href="/quiz/<%= match.quizzes[match.rounds.length] %>?matchId=<%= match.id %>" class="btn btn-success btn-sm">
+                                    ラウンド<%= match.rounds.length + 1 %>開始
+                                </a>
+                            <% } %>
+                        <% } %>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    <% } %>
+</div>
+
+<style>
+.matches-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.matches-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.match-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.match-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.match-card.waiting {
+    border-left: 4px solid #ffc107;
+}
+
+.match-card.in_progress {
+    border-left: 4px solid #28a745;
+}
+
+.match-card.completed {
+    border-left: 4px solid #6c757d;
+}
+
+.match-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.match-title {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+    flex: 1;
+    margin-right: 10px;
+}
+
+.match-format {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.match-format.bo3 {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.match-format.bo5 {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.match-info {
+    margin-bottom: 15px;
+}
+
+.match-info > div {
+    margin-bottom: 8px;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status-badge.waiting {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.in_progress {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-badge.completed {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+
+.winner-you {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.winner-other {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.match-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 14px;
+    text-align: center;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.no-matches {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-state {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.empty-state h3 {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #999;
+    margin-bottom: 20px;
+}
+
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .matches-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .match-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .match-actions {
+        justify-content: center;
+    }
+}
+</style>
+
+<%- include('partials/footer') %>

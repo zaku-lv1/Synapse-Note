@@ -17,6 +17,10 @@
         <% } else { %>
             <input type="hidden" name="draftQuizData" value='<%- JSON.stringify(quiz) %>'>
         <% } %>
+        
+        <% if (locals.matchId) { %>
+            <input type="hidden" name="matchId" value="<%= matchId %>">
+        <% } %>
 
         <div class="question-list">
             <% quiz.questions.forEach((q, index) => { %>

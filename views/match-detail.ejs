@@ -1,0 +1,470 @@
+<%- include('partials/header') %>
+
+<div class="match-detail-container">
+    <div class="match-header">
+        <h2 class="match-title"><%= match.title %></h2>
+        <div class="match-badges">
+            <span class="format-badge <%= match.format.toLowerCase() %>"><%= match.format %></span>
+            <span class="status-badge <%= match.status %>">
+                <% if (match.status === 'waiting') { %>
+                    待機中
+                <% } else if (match.status === 'in_progress') { %>
+                    進行中
+                <% } else if (match.status === 'completed') { %>
+                    完了
+                <% } %>
+            </span>
+        </div>
+    </div>
+
+    <div class="match-overview">
+        <div class="match-info-card">
+            <h3>試合情報</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>形式:</strong> <%= match.format %> 
+                    <span class="format-description">
+                        (<%= match.format === 'BO3' ? '2勝で勝利' : '3勝で勝利' %>)
+                    </span>
+                </div>
+                <div class="info-item">
+                    <strong>参加者数:</strong> <%= match.participants.length %>人
+                </div>
+                <div class="info-item">
+                    <strong>使用クイズ数:</strong> <%= match.quizzes ? match.quizzes.length : 0 %>個
+                </div>
+                <div class="info-item">
+                    <strong>作成日:</strong> <%= match.createdAt ? match.createdAt.toLocaleDateString('ja-JP') : '不明' %>
+                </div>
+            </div>
+        </div>
+
+        <% if (match.status === 'completed' && match.winner) { %>
+            <div class="winner-card">
+                <h3>🏆 勝者</h3>
+                <div class="winner-info">
+                    <% if (match.winner === user.uid) { %>
+                        <span class="winner-you">あなたの勝利！</span>
+                    <% } else { %>
+                        <span class="winner-other">相手の勝利</span>
+                    <% } %>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <% if (match.status === 'waiting') { %>
+        <div class="waiting-section">
+            <div class="waiting-card">
+                <h3>対戦相手を待っています</h3>
+                <p>この試合はまだ対戦相手を待っています。他のユーザーがこの試合に参加するか、直接招待してください。</p>
+                <div class="match-url">
+                    <strong>試合URL:</strong>
+                    <input type="text" readonly value="<%= `${req.protocol}://${req.get('host')}/quiz/match/${match.id}` %>" id="matchUrl">
+                    <button onclick="copyMatchUrl()" class="btn btn-secondary btn-sm">コピー</button>
+                </div>
+            </div>
+        </div>
+    <% } %>
+
+    <div class="rounds-section">
+        <h3>ラウンド履歴</h3>
+        
+        <% if (!match.rounds || match.rounds.length === 0) { %>
+            <div class="no-rounds">
+                <p>まだラウンドが開始されていません。</p>
+                <% if (match.status === 'in_progress' && match.participants.length >= 2) { %>
+                    <a href="/quiz/<%= match.quizzes[0] %>?matchId=<%= match.id %>" class="btn btn-primary">
+                        ラウンド1を開始
+                    </a>
+                <% } %>
+            </div>
+        <% } else { %>
+            <div class="rounds-list">
+                <% match.rounds.forEach((round, index) => { %>
+                    <div class="round-card">
+                        <div class="round-header">
+                            <span class="round-number">ラウンド <%= index + 1 %></span>
+                            <span class="round-date">
+                                <%= round.completedAt ? new Date(round.completedAt.seconds * 1000).toLocaleDateString('ja-JP') : '進行中' %>
+                            </span>
+                        </div>
+                        
+                        <div class="round-results">
+                            <% if (round.participants && round.participants.length > 0) { %>
+                                <% round.participants.forEach(participant => { %>
+                                    <div class="participant-result <%= participant.userId === user.uid ? 'your-result' : '' %>">
+                                        <span class="participant-name">
+                                            <%= participant.userId === user.uid ? 'あなた' : '相手' %>
+                                        </span>
+                                        <span class="participant-score">
+                                            <%= participant.score || 0 %>/<%= participant.maxScore || 0 %>点
+                                        </span>
+                                        <% if (round.winner === participant.userId) { %>
+                                            <span class="round-winner">🏆</span>
+                                        <% } %>
+                                    </div>
+                                <% }); %>
+                            <% } %>
+                        </div>
+                        
+                        <% if (round.quizTitle) { %>
+                            <div class="round-quiz">
+                                使用クイズ: <%= round.quizTitle %>
+                            </div>
+                        <% } %>
+                    </div>
+                <% }); %>
+            </div>
+            
+            <% if (match.status === 'in_progress' && match.rounds.length < (match.format === 'BO3' ? 5 : 9)) { %>
+                <% const nextRoundIndex = match.rounds.length; %>
+                <% if (nextRoundIndex < match.quizzes.length) { %>
+                    <div class="next-round">
+                        <h4>次のラウンド</h4>
+                        <a href="/quiz/<%= match.quizzes[nextRoundIndex] %>?matchId=<%= match.id %>" class="btn btn-primary btn-lg">
+                            ラウンド<%= nextRoundIndex + 1 %>を開始
+                        </a>
+                    </div>
+                <% } %>
+            <% } %>
+        <% } %>
+    </div>
+
+    <div class="match-actions">
+        <a href="/quiz/matches" class="btn btn-secondary">試合一覧に戻る</a>
+        <% if (match.status === 'completed') { %>
+            <button onclick="shareMatch()" class="btn btn-primary">結果をシェア</button>
+        <% } %>
+    </div>
+</div>
+
+<script>
+function copyMatchUrl() {
+    const urlInput = document.getElementById('matchUrl');
+    urlInput.select();
+    document.execCommand('copy');
+    
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = 'コピー完了！';
+    button.style.backgroundColor = '#28a745';
+    
+    setTimeout(() => {
+        button.textContent = originalText;
+        button.style.backgroundColor = '';
+    }, 2000);
+}
+
+function shareMatch() {
+    const matchTitle = '<%= match.title %>';
+    const result = '<%= match.winner === user.uid ? "勝利" : "敗北" %>';
+    const text = `${matchTitle}の結果: ${result}でした！`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Synapse Note - 試合結果',
+            text: text,
+            url: window.location.href
+        });
+    } else {
+        // フォールバック: クリップボードにコピー
+        navigator.clipboard.writeText(text + ' ' + window.location.href).then(() => {
+            alert('結果がクリップボードにコピーされました！');
+        });
+    }
+}
+</script>
+
+<style>
+.match-detail-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.match-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.match-title {
+    margin: 0;
+    color: #333;
+}
+
+.match-badges {
+    display: flex;
+    gap: 10px;
+}
+
+.format-badge, .status-badge {
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.format-badge.bo3 {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.format-badge.bo5 {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.status-badge.waiting {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.in_progress {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-badge.completed {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+
+.match-overview {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.match-info-card, .winner-card, .waiting-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.match-info-card h3, .winner-card h3, .waiting-card h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.info-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.format-description {
+    color: #666;
+    font-size: 14px;
+}
+
+.winner-card {
+    text-align: center;
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    border: 2px solid #f1c40f;
+}
+
+.winner-info {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.winner-you {
+    color: #27ae60;
+}
+
+.winner-other {
+    color: #e74c3c;
+}
+
+.waiting-section {
+    margin-bottom: 30px;
+}
+
+.match-url {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.match-url input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+}
+
+.rounds-section h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.no-rounds {
+    text-align: center;
+    padding: 40px 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    color: #666;
+}
+
+.rounds-list {
+    display: grid;
+    gap: 15px;
+}
+
+.round-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.round-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.round-number {
+    font-weight: bold;
+    font-size: 16px;
+    color: #333;
+}
+
+.round-date {
+    color: #666;
+    font-size: 14px;
+}
+
+.round-results {
+    display: grid;
+    gap: 10px;
+}
+
+.participant-result {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.participant-result.your-result {
+    background-color: #e3f2fd;
+    border: 1px solid #bbdefb;
+}
+
+.participant-score {
+    font-weight: bold;
+}
+
+.round-winner {
+    font-size: 18px;
+}
+
+.round-quiz {
+    margin-top: 10px;
+    color: #666;
+    font-size: 14px;
+}
+
+.next-round {
+    margin-top: 30px;
+    text-align: center;
+    padding: 20px;
+    background-color: #e8f5e8;
+    border-radius: 8px;
+}
+
+.next-round h4 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.match-actions {
+    margin-top: 40px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    text-align: center;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-lg {
+    padding: 15px 30px;
+    font-size: 18px;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+@media (max-width: 768px) {
+    .match-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .match-overview {
+        grid-template-columns: 1fr;
+    }
+    
+    .match-url {
+        flex-direction: column;
+    }
+    
+    .match-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+<%- include('partials/footer') %>

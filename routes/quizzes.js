@@ -43,6 +43,115 @@ function requireLogin(req, res, next) {
     next();
 }
 
+// --- 試合システム関連の関数 ---
+async function handleMatchRound(db, matchId, userId, roundResult) {
+    try {
+        const matchDoc = await db.collection('matches').doc(matchId).get();
+        if (!matchDoc.exists) {
+            console.error('Match not found:', matchId);
+            return;
+        }
+
+        const match = matchDoc.data();
+        const currentRounds = match.rounds || [];
+        const currentRoundIndex = currentRounds.length;
+
+        // 現在のラウンドを取得または作成
+        let currentRound = currentRounds[currentRoundIndex];
+        if (!currentRound) {
+            currentRound = {
+                roundNumber: currentRoundIndex + 1,
+                quizId: roundResult.quizId,
+                quizTitle: roundResult.quizTitle,
+                participants: [],
+                winner: null,
+                completedAt: null
+            };
+        }
+
+        // このユーザーの結果を追加または更新
+        const participantIndex = currentRound.participants.findIndex(p => p.userId === userId);
+        const participantResult = {
+            userId: userId,
+            score: roundResult.totalScore,
+            maxScore: roundResult.maxScore,
+            completedAt: roundResult.completedAt
+        };
+
+        if (participantIndex >= 0) {
+            currentRound.participants[participantIndex] = participantResult;
+        } else {
+            currentRound.participants.push(participantResult);
+        }
+
+        // 全参加者が完了したかチェック
+        const allParticipantsCompleted = match.participants.every(participantId => 
+            currentRound.participants.some(p => p.userId === participantId)
+        );
+
+        if (allParticipantsCompleted) {
+            // ラウンド勝者を決定（スコアが高い方）
+            const sortedParticipants = currentRound.participants.sort((a, b) => {
+                const scoreA = a.maxScore > 0 ? (a.score / a.maxScore) : 0;
+                const scoreB = b.maxScore > 0 ? (b.score / b.maxScore) : 0;
+                return scoreB - scoreA;
+            });
+
+            currentRound.winner = sortedParticipants[0].userId;
+            currentRound.completedAt = admin.firestore.FieldValue.serverTimestamp();
+
+            // 勝利数をカウント
+            const updatedRounds = [...currentRounds];
+            updatedRounds[currentRoundIndex] = currentRound;
+
+            const winCounts = {};
+            match.participants.forEach(participantId => {
+                winCounts[participantId] = updatedRounds.filter(round => round.winner === participantId).length;
+            });
+
+            // 試合終了条件をチェック
+            const requiredWins = match.format === 'BO3' ? 2 : 3;
+            const maxWins = Math.max(...Object.values(winCounts));
+            const matchWinner = maxWins >= requiredWins ? 
+                Object.keys(winCounts).find(pid => winCounts[pid] === maxWins) : null;
+
+            // 延長戦の処理
+            const totalRounds = updatedRounds.length;
+            const maxRounds = match.format === 'BO3' ? 5 : 9; // BO3は最大5戦、BO5は最大9戦（延長込み）
+
+            let matchStatus = match.status;
+            if (matchWinner) {
+                matchStatus = 'completed';
+            } else if (totalRounds >= maxRounds) {
+                // 最大ラウンド数に達した場合、勝利数で判定
+                matchStatus = 'completed';
+                matchWinner = Object.keys(winCounts).find(pid => winCounts[pid] === maxWins);
+            }
+
+            // 試合データを更新
+            await db.collection('matches').doc(matchId).update({
+                rounds: updatedRounds,
+                scores: winCounts,
+                status: matchStatus,
+                winner: matchWinner || null,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        } else {
+            // まだ全員完了していない場合、ラウンドデータのみ更新
+            const updatedRounds = [...currentRounds];
+            updatedRounds[currentRoundIndex] = currentRound;
+
+            await db.collection('matches').doc(matchId).update({
+                rounds: updatedRounds,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+    } catch (error) {
+        console.error('Match round handling error:', error);
+    }
+}
+
 // --- Google AI画像入力用変換 ---
 function fileToGenerativePart(buffer, mimeType) {
     return {
@@ -317,7 +426,7 @@ router.get('/my-quizzes', requireLogin, async (req, res) => {
  */
 router.post('/submit', async (req, res) => {
     try {
-        const { quizId, draftQuizData, answers } = req.body;
+        const { quizId, draftQuizData, answers, matchId } = req.body;
         let quiz, isDraft = false;
 
         // Initialize db outside of if/else block so it's available throughout the function
@@ -453,8 +562,20 @@ ${JSON.stringify(normalizedAnswers, null, 2)}
                 quizId: quiz.id || null,
                 quizTitle: quiz.title,
                 totalScore, maxScore,
+                matchId: matchId || null, // 試合IDがある場合は保存
                 attemptedAt: admin.firestore.FieldValue.serverTimestamp()
             });
+
+            // 試合コンテキストの処理
+            if (matchId) {
+                await handleMatchRound(db, matchId, req.session.user.uid, {
+                    quizId: quiz.id || null,
+                    quizTitle: quiz.title,
+                    totalScore,
+                    maxScore,
+                    completedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+            }
         }
 
         res.render('quiz-result', {
@@ -464,7 +585,8 @@ ${JSON.stringify(normalizedAnswers, null, 2)}
             totalScore,
             maxScore,
             isDraft,
-            aiError
+            aiError,
+            matchId: matchId || null // 試合IDを結果ページに渡す
         });
 
     } catch (error) {
@@ -586,6 +708,171 @@ router.get('/:quizId/delete', requireLogin, async (req, res) => {
     }
 });
 
+// ===================== 試合システム（BO3/BO5） =====================
+
+/**
+ * 試合作成ページ
+ */
+router.get('/create-match', requireLogin, async (req, res) => {
+    try {
+        const db = getDb();
+        if (!db) {
+            return res.render('create-match', {
+                user: req.session.user,
+                error: 'データベースに接続できません。',
+                quizzes: []
+            });
+        }
+
+        // ユーザーのクイズ一覧を取得（試合に使用するため）
+        const quizzesSnapshot = await db.collection('quizzes')
+            .where('ownerId', '==', req.session.user.uid)
+            .orderBy('createdAt', 'desc')
+            .get();
+        
+        const quizzes = quizzesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt?.toDate()
+        }));
+
+        res.render('create-match', { user: req.session.user, quizzes, error: null });
+    } catch (error) {
+        console.error("試合作成ページ表示エラー:", error);
+        res.render('create-match', {
+            user: req.session.user,
+            error: '試合作成ページの表示に失敗しました。',
+            quizzes: []
+        });
+    }
+});
+
+/**
+ * 試合作成処理
+ */
+router.post('/create-match', requireLogin, async (req, res) => {
+    try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).send("データベースに接続できません。");
+        }
+
+        const { title, format, opponent, selectedQuizzes } = req.body;
+        
+        // バリデーション
+        if (!title || !format || !selectedQuizzes) {
+            return res.status(400).send("必要な情報が不足しています。");
+        }
+
+        if (!['BO3', 'BO5'].includes(format)) {
+            return res.status(400).send("無効な試合形式です。");
+        }
+
+        const quizList = Array.isArray(selectedQuizzes) ? selectedQuizzes : [selectedQuizzes];
+        const requiredQuizCount = format === 'BO3' ? 3 : 5;
+        
+        if (quizList.length < requiredQuizCount) {
+            return res.status(400).send(`${format}形式には最低${requiredQuizCount}つのクイズが必要です。`);
+        }
+
+        // 試合データを作成
+        const matchData = {
+            title,
+            format, // "BO3" or "BO5"
+            participants: [req.session.user.uid], // 作成者を追加、対戦相手は後で参加
+            opponentUsername: opponent || null, // 対戦相手のユーザー名（空でも可）
+            quizzes: quizList.slice(0, requiredQuizCount), // 必要数だけ取得
+            status: 'waiting', // waiting, in_progress, completed
+            currentRound: 0,
+            rounds: [],
+            scores: {}, // userId -> wins count
+            winner: null,
+            createdBy: req.session.user.uid,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        };
+
+        // 対戦相手が指定されている場合は in_progress にする
+        if (opponent) {
+            matchData.status = 'in_progress';
+            matchData.participants.push(opponent); // 仮の対戦相手ID
+        }
+
+        const matchRef = await db.collection('matches').add(matchData);
+        
+        res.redirect(`/quiz/match/${matchRef.id}`);
+    } catch (error) {
+        console.error("試合作成エラー:", error);
+        res.status(500).send("試合の作成中にエラーが発生しました。");
+    }
+});
+
+/**
+ * 試合一覧ページ
+ */
+router.get('/matches', requireLogin, async (req, res) => {
+    try {
+        const db = getDb();
+        if (!db) {
+            return res.render('matches', {
+                user: req.session.user,
+                matches: [],
+                error: 'データベースに接続できません。'
+            });
+        }
+
+        // ユーザーが参加している試合を取得
+        const matchesSnapshot = await db.collection('matches')
+            .where('participants', 'array-contains', req.session.user.uid)
+            .orderBy('createdAt', 'desc')
+            .get();
+
+        const matches = matchesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt?.toDate()
+        }));
+
+        res.render('matches', { user: req.session.user, matches, error: null });
+    } catch (error) {
+        console.error("試合一覧取得エラー:", error);
+        res.render('matches', {
+            user: req.session.user,
+            matches: [],
+            error: '試合一覧の取得に失敗しました。'
+        });
+    }
+});
+
+/**
+ * 試合詳細ページ
+ */
+router.get('/match/:matchId', requireLogin, async (req, res) => {
+    try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).send("データベースに接続できません。");
+        }
+
+        const matchDoc = await db.collection('matches').doc(req.params.matchId).get();
+        if (!matchDoc.exists) {
+            return res.status(404).send("試合が見つかりません。");
+        }
+
+        const match = { id: matchDoc.id, ...matchDoc.data() };
+        
+        // 参加権限チェック
+        if (!match.participants.includes(req.session.user.uid)) {
+            return res.status(403).send("この試合にアクセスする権限がありません。");
+        }
+
+        res.render('match-detail', { user: req.session.user, match });
+    } catch (error) {
+        console.error("試合詳細表示エラー:", error);
+        res.status(500).send("試合詳細の表示中にエラーが発生しました。");
+    }
+});
+
 // ===================== クイズ詳細表示（catch-all: 必ず一番下！） =====================
 
 /**
@@ -634,7 +921,12 @@ router.get('/:quizId', async (req, res) => {
             });
         }
         
-        res.render('solve-quiz', { user: req.session.user || null, quiz: { id: quizDoc.id, ...quiz }, isDraft: false });
+        res.render('solve-quiz', { 
+            user: req.session.user || null, 
+            quiz: { id: quizDoc.id, ...quiz }, 
+            isDraft: false,
+            matchId: req.query.matchId || null 
+        });
     } catch (error) {
         console.error("クイズ表示エラー:", error);
         
