@@ -213,10 +213,9 @@ router.get('/matches/:matchId', async (req, res) => {
         const matchData = match.data();
 
         // Get participant details
-        const usersCollection = await databaseService.getCollection('users');
         const [participant1Doc, participant2Doc] = await Promise.all([
-            databaseService.getDocument('users', matchData.participant1Id).get(),
-            databaseService.getDocument('users', matchData.participant2Id).get()
+            (await databaseService.getDocument('users', matchData.participant1Id)).get(),
+            (await databaseService.getDocument('users', matchData.participant2Id)).get()
         ]);
 
         const participant1 = participant1Doc.exists ? participant1Doc.data() : null;

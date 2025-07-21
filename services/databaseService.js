@@ -358,7 +358,7 @@ class SQLiteDocument {
 
 class SQLiteDocumentSnapshot {
     constructor(data, tableName) {
-        this.data = data;
+        this._data = data;
         this.tableName = tableName;
         this.id = data.id;
         this.exists = true;
@@ -366,7 +366,7 @@ class SQLiteDocumentSnapshot {
 
     data() {
         const doc = new SQLiteDocument(null, this.tableName, this.id);
-        return doc.parseRowData(this.data);
+        return doc.parseRowData(this._data);
     }
 }
 
