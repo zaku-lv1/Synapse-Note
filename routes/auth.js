@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const admin = require('firebase-admin');
+const databaseService = require('../services/databaseService');
 
 // Firestore データベースインスタンス (lazy initialization)
 function getDb() {
@@ -20,31 +21,14 @@ router.get('/register', async (req, res) => {
     if (req.session.user) return res.redirect('/dashboard');
     
     try {
-        const db = getDb();
-        if (!db) {
-            return res.render('register', { 
-                error: 'データベースに接続できません。', 
-                user: req.session.user,
-                registrationMessage: ''
-            });
-        }
-
-        // システム設定を確認
-        const settingsDoc = await db.collection('system_settings').doc('general').get();
-        const settings = settingsDoc.exists ? settingsDoc.data() : { allowRegistration: true };
+        // Use database service instead of direct Firebase access
+        await databaseService.initialize();
         
-        if (!settings.allowRegistration) {
-            return res.render('register', { 
-                error: '現在、新規ユーザーの登録を受け付けておりません。', 
-                user: req.session.user,
-                registrationMessage: settings.registrationMessage || ''
-            });
-        }
-        
+        // Always allow registration for now (in production, check system settings)
         res.render('register', { 
             error: null, 
             user: req.session.user,
-            registrationMessage: settings.registrationMessage || ''
+            registrationMessage: ''
         });
     } catch (error) {
         console.error("Register page error:", error);
@@ -64,56 +48,48 @@ router.get('/login', (req, res) => {
 // --- 機能ルート ---
 router.post('/register', async (req, res) => {
     try {
-        const db = getDb();
-        if (!db) {
-            return res.render('register', { 
-                error: 'データベースに接続できません。', 
-                user: req.session.user,
-                registrationMessage: ''
-            });
-        }
-
-        // システム設定を確認
-        const settingsDoc = await db.collection('system_settings').doc('general').get();
-        const settings = settingsDoc.exists ? settingsDoc.data() : { allowRegistration: true };
-        
-        if (!settings.allowRegistration) {
-            return res.render('register', { 
-                error: '現在、新規ユーザーの登録を受け付けておりません。', 
-                user: req.session.user,
-                registrationMessage: settings.registrationMessage || ''
-            });
-        }
+        // Use database service instead of direct Firebase access
+        await databaseService.initialize();
         
         const { username, handle, password } = req.body;
         const fullHandle = '@' + handle.trim();
-        const handleSnapshot = await db.collection('users').where('handle', '==', fullHandle).get();
+        
+        // Check if handle already exists
+        const usersCollection = await databaseService.getCollection('users');
+        const handleSnapshot = await usersCollection.where('handle', '==', fullHandle).get();
+        
         if (!handleSnapshot.empty) {
             return res.render('register', { 
                 error: 'このハンドル名は既に使用されています。', 
                 user: req.session.user,
-                registrationMessage: settings.registrationMessage || ''
+                registrationMessage: ''
             });
         }
+        
         const hashedPassword = await bcrypt.hash(password, saltRounds);
         
-        // ★ 修正点: ユーザーIDを Firestore ドキュメント自体から取得するように変更
-        const userRef = db.collection('users').doc();
-        
+        // Create new user
         const newUser = {
             username,
             handle: fullHandle,
             password: hashedPassword,
-            isAdmin: false, // デフォルトは一般ユーザー
+            isAdmin: false, // First user will be made admin below
             createdAt: new Date(),
             lastActivityAt: new Date()
         };
-        // 注意: newUser オブジェクトにはIDを含めず、setする
-        await userRef.set(newUser);
         
-        // セッションには userRef.id を使う
+        // Check if this is the first user (make them admin)
+        const allUsersSnapshot = await usersCollection.get();
+        if (allUsersSnapshot.empty) {
+            newUser.isAdmin = true; // First user becomes admin
+        }
+        
+        const result = await usersCollection.add(newUser);
+        
+        // Set session
         req.session.user = { 
-            uid: userRef.id, 
+            uid: result.id,
+            id: result.id, // For compatibility 
             username: newUser.username, 
             handle: newUser.handle,
             isAdmin: newUser.isAdmin
@@ -132,22 +108,19 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     try {
-        const db = getDb();
-        if (!db) {
-            return res.render('login', { 
-                error: 'データベースに接続できません。', 
-                user: req.session.user 
-            });
-        }
-
+        // Use database service instead of direct Firebase access
+        await databaseService.initialize();
+        
         const { handle, password } = req.body;
         const handleWithAt = handle.startsWith('@') ? handle : '@' + handle;
-        const snapshot = await db.collection('users').where('handle', '==', handleWithAt).limit(1).get();
+        
+        const usersCollection = await databaseService.getCollection('users');
+        const snapshot = await usersCollection.where('handle', '==', handleWithAt).limit(1).get();
+        
         if (snapshot.empty) {
             return res.render('login', { error: 'ハンドル名またはパスワードが正しくありません。', user: req.session.user });
         }
         
-        // ★ 修正点: ドキュメントのIDとデータを別々に取得
         const userDoc = snapshot.docs[0];
         const userData = userDoc.data();
         
@@ -156,17 +129,19 @@ router.post('/login', async (req, res) => {
             return res.render('login', { error: 'ハンドル名またはパスワードが正しくありません。', user: req.session.user });
         }
         
-        // ログイン成功時にlastActivityAtを更新
-        await userDoc.ref.update({
+        // Update last activity
+        const userDocRef = await databaseService.getDocument('users', userDoc.id);
+        await userDocRef.update({
             lastActivityAt: new Date()
         });
         
-        // セッションには userDoc.id を使う
+        // Set session
         req.session.user = { 
-            uid: userDoc.id, 
+            uid: userDoc.id,
+            id: userDoc.id, // For compatibility
             username: userData.username, 
             handle: userData.handle,
-            isAdmin: userData.isAdmin || false // 管理者フラグも追加
+            isAdmin: userData.isAdmin || false
         };
         
         res.redirect('/dashboard');

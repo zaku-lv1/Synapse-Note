@@ -123,6 +123,7 @@ const quizRoutes = require('./routes/quizzes');
 const profileRoutes = require('./routes/profile');
 const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
+const tournamentRoutes = require('./routes/tournaments');
 
 // ★★★ ここからが修正点 ★★★
 
@@ -146,6 +147,7 @@ app.get('/', (req, res) => {
 app.use('/api', apiRoutes);      // API関連 (/api/public/stats, /api/user/profile など)
 app.use('/admin', adminRoutes);   // 管理者関連 (/admin/users, /admin/quizzes など)
 app.use('/quiz', quizRoutes); // クイズ関連 (/quiz/create-quiz など)
+app.use('/tournaments', tournamentRoutes); // 大会関連 (/tournaments, /tournaments/create など)
 app.use('/', authRoutes);      // 認証関連 (/login, /register, /logout)
 app.use('/', indexRoutes);     // その他 (/dashboard, /my-history など)
 app.use('/profile', profileRoutes); // プロフィール関連 (/profile/edit, /profile/view など)

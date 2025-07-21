@@ -15,6 +15,7 @@
 const express = require('express');
 const router = express.Router();
 const admin = require('firebase-admin');
+const databaseService = require('../services/databaseService');
 
 // Firestore データベースインスタンス (lazy initialization)
 function getDb() {

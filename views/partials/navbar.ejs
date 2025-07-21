@@ -1,0 +1,84 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="fas fa-brain"></i> Synapse Note
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <% if (user) { %>
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">
+                        <i class="fas fa-home"></i> ダッシュボード
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/public-quizzes">
+                        <i class="fas fa-list"></i> 公開クイズ
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/quiz/my-quizzes">
+                        <i class="fas fa-folder"></i> マイクイズ
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/tournaments">
+                        <i class="fas fa-trophy"></i> 大会
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/my-history">
+                        <i class="fas fa-history"></i> 履歴
+                    </a>
+                </li>
+                <% } else { %>
+                <li class="nav-item">
+                    <a class="nav-link" href="/public-quizzes">
+                        <i class="fas fa-list"></i> 公開クイズ
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/tournaments">
+                        <i class="fas fa-trophy"></i> 大会
+                    </a>
+                </li>
+                <% } %>
+            </ul>
+            
+            <ul class="navbar-nav">
+                <% if (user) { %>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user"></i> <%= user.username %>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/profile"><i class="fas fa-user-circle"></i> プロフィール</a></li>
+                        <% if (user.isAdmin) { %>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/admin"><i class="fas fa-cog"></i> 管理者</a></li>
+                        <% } %>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt"></i> ログアウト</a></li>
+                    </ul>
+                </li>
+                <% } else { %>
+                <li class="nav-item">
+                    <a class="nav-link" href="/login">
+                        <i class="fas fa-sign-in-alt"></i> ログイン
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/register">
+                        <i class="fas fa-user-plus"></i> 新規登録
+                    </a>
+                </li>
+                <% } %>
+            </ul>
+        </div>
+    </div>
+</nav>
