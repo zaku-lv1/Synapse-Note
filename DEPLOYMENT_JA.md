@@ -1,51 +1,39 @@
-# Synapse Note - Vercel デプロイメントガイド
+# Synapse Note - Firebase クラウドデプロイメントガイド
+
+このアプリケーションは Firebase/Vercel サーバーレス環境での動作専用に設計されています。
 
 ## 環境変数の設定
 
 ### 必要な環境変数
 
-`.env.example` を `.env` にコピーして、以下の変数を設定してください：
+クラウドデプロイメントプラットフォームで以下の変数を設定してください：
 
 #### 基本設定
-- `PORT` - ポート番号（デフォルト: 3000、Vercelで自動設定）
-- `SESSION_SECRET` - セッション暗号化用の秘密鍵
-- `NODE_ENV` - 環境設定（development/production）
+- `SESSION_SECRET` - セッション暗号化用の秘密鍵（安全なランダム文字列を生成）
+- `NODE_ENV` - クラウドデプロイメント用に `production` を設定
 
-#### Firebase設定
-以下のオプションから一つを選択してください：
-
-**オプション1: サービスアカウントJSON（Vercel推奨）**
+#### Firebase設定（必須）
+**サービスアカウントJSON（クラウドデプロイメント必須）**
 ```bash
 GOOGLE_APPLICATION_CREDENTIALS_JSON={"type":"service_account","project_id":"your-project-id",...}
-```
-
-**オプション2: サービスアカウントファイルパス（ローカル開発推奨）**
-```bash
-GOOGLE_APPLICATION_CREDENTIALS=./path/to/service-account-key.json
 ```
 
 #### 追加設定
 - `FIREBASE_PROJECT_ID` - あなたのFirebaseプロジェクトID
 - `GEMINI_API_KEY` - Gemini統合用のGoogle AI APIキー
 
-## ローカル開発
+#### オプション設定
+- `GOOGLE_APPS_SCRIPT_URL` - 外部API統合URL
+- `USE_GOOGLE_APPS_SCRIPT` - Google Apps Script統合の有効/無効（デフォルト: true）
 
-1. 依存関係をインストール：
-```bash
-npm install
-```
+## Firebase セットアップ
 
-2. テンプレートから`.env`ファイルを作成：
-```bash
-cp .env.example .env
-```
-
-3. `.env`ファイルで環境変数を設定
-
-4. 開発サーバーを起動：
-```bash
-npm run dev
-```
+1. https://console.firebase.google.com/ でFirebaseプロジェクトを作成
+2. Firestore Database を有効化
+3. サービスアカウントを作成：
+   - プロジェクト設定 > サービスアカウント に移動
+   - 新しい秘密鍵を生成
+   - JSON全体を `GOOGLE_APPLICATION_CREDENTIALS_JSON` 用にコピー
 
 ## Vercelデプロイメント
 
