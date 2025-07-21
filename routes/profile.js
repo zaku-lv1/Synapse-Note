@@ -1,6 +1,16 @@
 const express = require('express');
-const { getDb } = require('../services/database');
 const router = express.Router();
+const admin = require('firebase-admin');
+
+// Firestore データベースインスタンス (lazy initialization)
+function getDb() {
+    try {
+        return admin.firestore();
+    } catch (error) {
+        console.error('Firebase not initialized:', error.message);
+        return null;
+    }
+}
 
 // 認証チェックミドルウェア
 const requireAuth = (req, res, next) => {

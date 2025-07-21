@@ -1,12 +1,20 @@
 const express = require('express');
-const { getDb } = require('../services/database');
 const router = express.Router();
+const admin = require('firebase-admin');
 const bcrypt = require('bcrypt');
-
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // --- 1. 初期設定 ---
-const db = admin.firestore();
+
+// Firestore データベースインスタンス (lazy initialization)
+function getDb() {
+    try {
+        return admin.firestore();
+    } catch (error) {
+        console.error('Firebase not initialized:', error.message);
+        return null;
+    }
+}
 const saltRounds = 10;
 
 // Gemini API初期化（APIキーの存在確認）

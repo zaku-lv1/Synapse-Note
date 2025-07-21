@@ -14,7 +14,17 @@
  */
 
 const express = require('express');
-const { getDb } = require('../services/database');
+const admin = require('firebase-admin');
+
+// Firestore データベースインスタンス (lazy initialization)
+function getDb() {
+    try {
+        return admin.firestore();
+    } catch (error) {
+        console.error('Firebase not initialized:', error.message);
+        return null;
+    }
+}
 const router = express.Router();
 
 const GoogleAppsScriptService = require('../services/googleAppsScriptService');
