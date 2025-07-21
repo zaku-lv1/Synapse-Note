@@ -1,0 +1,385 @@
+<%- include('../partials/header') %>
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1 class="page-title">
+                <i class="fas fa-plus"></i>
+                試合結果を追加
+            </h1>
+            <div class="page-actions">
+                <a href="/matches" class="button secondary">
+                    <i class="fas fa-arrow-left"></i> 一覧に戻る
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <% if (error) { %>
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <%= error %>
+        </div>
+    <% } %>
+
+    <div class="content-container">
+        <div class="form-container">
+            <form action="/matches/create" method="POST" class="match-form">
+                <div class="form-section">
+                    <h3>基本情報</h3>
+                    
+                    <div class="form-group">
+                        <label for="matchDate" class="form-label required">
+                            <i class="fas fa-calendar"></i>
+                            試合日
+                        </label>
+                        <input type="date" 
+                               id="matchDate" 
+                               name="matchDate" 
+                               class="form-input" 
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="opponent" class="form-label required">
+                            <i class="fas fa-users"></i>
+                            対戦相手
+                        </label>
+                        <input type="text" 
+                               id="opponent" 
+                               name="opponent" 
+                               class="form-input" 
+                               placeholder="対戦相手の名前を入力"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="result" class="form-label required">
+                            <i class="fas fa-trophy"></i>
+                            試合結果
+                        </label>
+                        <select id="result" name="result" class="form-select" required>
+                            <option value="">結果を選択</option>
+                            <option value="win">勝利</option>
+                            <option value="lose">敗北</option>
+                            <option value="draw">引き分け</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="score" class="form-label">
+                            <i class="fas fa-hashtag"></i>
+                            スコア
+                        </label>
+                        <input type="text" 
+                               id="score" 
+                               name="score" 
+                               class="form-input" 
+                               placeholder="例: 2-1, 15-10など">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>参加プレイヤー</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label required">
+                            <i class="fas fa-user-friends"></i>
+                            プレイヤー選択（Discord ID参照）
+                        </label>
+                        
+                        <% if (members.length === 0) { %>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                アクティブなチームメンバーがいません。
+                                <% if (user.isAdmin) { %>
+                                    <a href="/matches/members" class="alert-link">メンバーを追加</a>してください。
+                                <% } else { %>
+                                    管理者にメンバーの追加を依頼してください。
+                                <% } %>
+                            </div>
+                        <% } else { %>
+                            <div class="player-selection">
+                                <div class="select-all-controls">
+                                    <button type="button" id="selectAllPlayers" class="button small">全選択</button>
+                                    <button type="button" id="clearAllPlayers" class="button small secondary">選択解除</button>
+                                </div>
+                                
+                                <div class="players-grid">
+                                    <% members.forEach(member => { %>
+                                        <div class="player-option">
+                                            <input type="checkbox" 
+                                                   id="player_<%= member.id %>" 
+                                                   name="players" 
+                                                   value="<%= member.id %>" 
+                                                   class="player-checkbox">
+                                            <label for="player_<%= member.id %>" class="player-label">
+                                                <div class="player-info">
+                                                    <div class="player-name">
+                                                        <i class="fas fa-user"></i>
+                                                        <%= member.name %>
+                                                    </div>
+                                                    <div class="player-discord">
+                                                        <i class="fab fa-discord"></i>
+                                                        <%= member.discordId %>
+                                                    </div>
+                                                    <% if (member.position) { %>
+                                                        <div class="player-position">
+                                                            <i class="fas fa-tag"></i>
+                                                            <%= member.position %>
+                                                        </div>
+                                                    <% } %>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    <% }); %>
+                                </div>
+                                
+                                <div class="selected-players">
+                                    <strong>選択されたプレイヤー: </strong>
+                                    <span id="selectedCount">0</span>人
+                                    <div id="selectedPlayersList" class="selected-list"></div>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>追加情報</h3>
+                    
+                    <div class="form-group">
+                        <label for="notes" class="form-label">
+                            <i class="fas fa-sticky-note"></i>
+                            備考・メモ
+                        </label>
+                        <textarea id="notes" 
+                                  name="notes" 
+                                  class="form-textarea" 
+                                  rows="4" 
+                                  placeholder="試合の詳細、特記事項など"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="button primary large" <%= members.length === 0 ? 'disabled' : '' %>>
+                        <i class="fas fa-save"></i>
+                        試合結果を保存
+                    </button>
+                    <a href="/matches" class="button secondary large">
+                        <i class="fas fa-times"></i>
+                        キャンセル
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 30px;
+}
+
+.form-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.form-section h3 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.player-selection {
+    margin-top: 10px;
+}
+
+.select-all-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.player-option {
+    position: relative;
+}
+
+.player-checkbox {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.player-label {
+    display: block;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.player-label:hover {
+    background: #e9ecef;
+    border-color: #6c757d;
+}
+
+.player-checkbox:checked + .player-label {
+    background: #d1ecf1;
+    border-color: #17a2b8;
+    box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.25);
+}
+
+.player-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.player-name {
+    font-weight: bold;
+    color: #333;
+    font-size: 14px;
+}
+
+.player-discord {
+    color: #5865F2;
+    font-size: 12px;
+}
+
+.player-position {
+    color: #6c757d;
+    font-size: 12px;
+}
+
+.selected-players {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.selected-list {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.selected-player-tag {
+    background: #17a2b8;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e1e5e9;
+}
+
+.button.large {
+    padding: 12px 24px;
+    font-size: 16px;
+}
+
+@media (max-width: 768px) {
+    .players-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .select-all-controls {
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.player-checkbox');
+    const selectedCount = document.getElementById('selectedCount');
+    const selectedList = document.getElementById('selectedPlayersList');
+    const selectAllBtn = document.getElementById('selectAllPlayers');
+    const clearAllBtn = document.getElementById('clearAllPlayers');
+    
+    // 選択状況を更新
+    function updateSelection() {
+        const checked = document.querySelectorAll('.player-checkbox:checked');
+        selectedCount.textContent = checked.length;
+        
+        // 選択されたプレイヤーのリストを更新
+        selectedList.innerHTML = '';
+        checked.forEach(checkbox => {
+            const label = checkbox.nextElementSibling;
+            const playerName = label.querySelector('.player-name').textContent.trim();
+            const tag = document.createElement('span');
+            tag.className = 'selected-player-tag';
+            tag.innerHTML = `<i class="fas fa-user"></i> ${playerName}`;
+            selectedList.appendChild(tag);
+        });
+    }
+    
+    // チェックボックスの変更を監視
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelection);
+    });
+    
+    // 全選択ボタン
+    selectAllBtn.addEventListener('click', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateSelection();
+    });
+    
+    // 選択解除ボタン
+    clearAllBtn.addEventListener('click', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateSelection();
+    });
+    
+    // 初期状態を設定
+    updateSelection();
+    
+    // 今日の日付をデフォルトに設定
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('matchDate').value = today;
+});
+</script>
+
+<%- include('../partials/footer') %>

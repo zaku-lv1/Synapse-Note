@@ -1,0 +1,257 @@
+<%- include('../partials/header') %>
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1 class="page-title">
+                <i class="fas fa-trophy"></i>
+                試合結果管理
+            </h1>
+            <div class="page-actions">
+                <a href="/matches/create" class="button primary">
+                    <i class="fas fa-plus"></i> 新しい試合結果を追加
+                </a>
+                <% if (user.isAdmin) { %>
+                    <a href="/matches/members" class="button secondary">
+                        <i class="fas fa-users"></i> チームメンバー管理
+                    </a>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <% if (message) { %>
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <%= message %>
+        </div>
+    <% } %>
+
+    <% if (error) { %>
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <%= error %>
+        </div>
+    <% } %>
+
+    <div class="content-container">
+        <% if (matchResults.length === 0) { %>
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <h3>試合結果がありません</h3>
+                <p>最初の試合結果を追加してください。</p>
+                <a href="/matches/create" class="button primary">
+                    <i class="fas fa-plus"></i> 試合結果を追加
+                </a>
+            </div>
+        <% } else { %>
+            <div class="match-results-grid">
+                <% matchResults.forEach(match => { %>
+                    <div class="match-result-card">
+                        <div class="match-result-header">
+                            <div class="match-date">
+                                <i class="fas fa-calendar"></i>
+                                <%= new Date(match.matchDate.toDate()).toLocaleDateString('ja-JP', { 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                }) %>
+                            </div>
+                            <div class="match-result-badge <%= match.result %>">
+                                <% if (match.result === 'win') { %>
+                                    <i class="fas fa-trophy"></i> 勝利
+                                <% } else if (match.result === 'lose') { %>
+                                    <i class="fas fa-times"></i> 敗北
+                                <% } else { %>
+                                    <i class="fas fa-handshake"></i> 引き分け
+                                <% } %>
+                            </div>
+                        </div>
+                        
+                        <div class="match-details">
+                            <div class="opponent">
+                                <strong>対戦相手:</strong> <%= match.opponent %>
+                            </div>
+                            <% if (match.score) { %>
+                                <div class="score">
+                                    <strong>スコア:</strong> <%= match.score %>
+                                </div>
+                            <% } %>
+                            
+                            <div class="players">
+                                <strong>参加プレイヤー:</strong>
+                                <div class="player-list">
+                                    <% match.playerNames.forEach(playerName => { %>
+                                        <span class="player-tag">
+                                            <i class="fas fa-user"></i>
+                                            <%= playerName %>
+                                        </span>
+                                    <% }); %>
+                                </div>
+                            </div>
+                            
+                            <% if (match.notes) { %>
+                                <div class="notes">
+                                    <strong>備考:</strong>
+                                    <p><%= match.notes %></p>
+                                </div>
+                            <% } %>
+                        </div>
+                        
+                        <div class="match-footer">
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i>
+                                <%= new Date(match.createdAt.toDate()).toLocaleDateString('ja-JP') %> に登録
+                            </small>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<style>
+.match-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.match-result-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+    border: 1px solid #e1e5e9;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.match-result-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.match-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.match-date {
+    color: #666;
+    font-weight: 500;
+}
+
+.match-result-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.match-result-badge.win {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.match-result-badge.lose {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.match-result-badge.draw {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.match-details > div {
+    margin-bottom: 10px;
+}
+
+.player-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.player-tag {
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.notes p {
+    margin: 5px 0 0 0;
+    color: #666;
+    font-style: italic;
+}
+
+.match-footer {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #e1e5e9;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    color: #ccc;
+    margin-bottom: 20px;
+}
+
+.page-header {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.page-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+}
+
+.page-actions {
+    display: flex;
+    gap: 10px;
+}
+
+@media (max-width: 768px) {
+    .match-results-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header-content {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .page-actions {
+        justify-content: center;
+    }
+}
+</style>
+
+<%- include('../partials/footer') %>

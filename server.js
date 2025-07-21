@@ -101,6 +101,7 @@ const quizRoutes = require('./routes/quizzes');
 const profileRoutes = require('./routes/profile');
 const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
+const matchRoutes = require('./routes/matches');
 
 // ★★★ ここからが修正点 ★★★
 
@@ -123,6 +124,7 @@ app.get('/', (req, res) => {
 //    より具体的なパス（/quiz）を先に記述するのがベストプラクティスです。
 app.use('/api', apiRoutes);      // API関連 (/api/public/stats, /api/user/profile など)
 app.use('/admin', adminRoutes);   // 管理者関連 (/admin/users, /admin/quizzes など)
+app.use('/matches', matchRoutes); // 試合結果管理 (/matches, /matches/create など)
 app.use('/quiz', quizRoutes); // クイズ関連 (/quiz/create-quiz など)
 app.use('/', authRoutes);      // 認証関連 (/login, /register, /logout)
 app.use('/', indexRoutes);     // その他 (/dashboard, /my-history など)
