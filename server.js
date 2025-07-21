@@ -5,7 +5,7 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const admin = require('firebase-admin');
-const { FirestoreStore } = require('@google-cloud/connect-firestore');
+const FirestoreSessionStore = require('./services/firestoreSessionStore');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
@@ -15,47 +15,38 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Firebase Admin SDKの初期化
+// Firebase Admin SDK の初期化（クラウド環境専用）
 let db;
 try {
-  let adminConfig = {};
-  
-  // 環境変数からFirebase設定を読み込み
-  if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-    // Vercelなどのサーバーレス環境向け：JSON文字列から認証情報を取得
-    const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
-    adminConfig.credential = admin.credential.cert(serviceAccount);
-  } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    // ローカル開発環境向け：ファイルパスから認証情報を取得
-    adminConfig.credential = admin.credential.cert(process.env.GOOGLE_APPLICATION_CREDENTIALS);
-  } else {
-    // No credentials provided - warn but don't exit
-    console.warn("No Firebase credentials provided. Some features may not work.");
-    console.warn("Please set GOOGLE_APPLICATION_CREDENTIALS_JSON or GOOGLE_APPLICATION_CREDENTIALS.");
+  // 必須環境変数をチェック
+  if (!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+    throw new Error("GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable is required for Firebase initialization");
   }
   
-  // プロジェクトIDが明示的に設定されている場合は追加
-  if (process.env.FIREBASE_PROJECT_ID) {
-    adminConfig.projectId = process.env.FIREBASE_PROJECT_ID;
+  if (!process.env.FIREBASE_PROJECT_ID) {
+    throw new Error("FIREBASE_PROJECT_ID environment variable is required for Firebase initialization");
   }
   
-  // Firebase Admin SDKを初期化（認証情報がある場合のみ）
-  if (adminConfig.credential || process.env.NODE_ENV === 'production') {
-    if (admin.apps.length === 0) {
-      admin.initializeApp(adminConfig);
-    }
-    
-    db = admin.firestore();
-    console.log("Firebase Admin SDK initialized successfully.");
-  } else {
-    console.warn("Firebase Admin SDK not initialized - no credentials provided.");
-    db = null;
+  // サーバーレス環境向け：JSON文字列から認証情報を取得
+  const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+  const adminConfig = {
+    credential: admin.credential.cert(serviceAccount),
+    projectId: process.env.FIREBASE_PROJECT_ID
+  };
+  
+  // Firebase Admin SDKを初期化
+  if (admin.apps.length === 0) {
+    admin.initializeApp(adminConfig);
   }
+  
+  db = admin.firestore();
+  console.log("Firebase Admin SDK initialized successfully for cloud deployment.");
 } catch (error) {
   console.error("Error initializing Firebase Admin SDK:", error);
-  console.error("Application will continue without Firebase functionality.");
-  console.error("Please ensure GOOGLE_APPLICATION_CREDENTIALS_JSON or GOOGLE_APPLICATION_CREDENTIALS is properly set.");
-  db = null;
+  console.error("Application cannot continue without Firebase. Please ensure:");
+  console.error("1. GOOGLE_APPLICATION_CREDENTIALS_JSON is set with valid service account JSON");
+  console.error("2. FIREBASE_PROJECT_ID is set correctly");
+  process.exit(1);
 }
 
 // Expressの基本設定
@@ -72,17 +63,21 @@ if (process.env.NODE_ENV === 'production') {
     app.set('trust proxy', 1);
 }
 
-// セッションの設定 (FirestoreStoreを使用または fallback to memory store)
+// セッションの設定（Firebase Firestore使用）
 if (!process.env.SESSION_SECRET) {
     console.error("SESSION_SECRET environment variable is required");
     process.exit(1);
 }
 
-// Configure session store based on database availability
-let sessionConfig = {
+// Firebase Firestoreを使用したセッションストアの設定
+const sessionConfig = {
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    store: new FirestoreSessionStore({
+        database: db,
+        collection: 'express-sessions'
+    }),
     cookie: {
         secure: process.env.NODE_ENV === 'production', // 本番環境ではtrue
         httpOnly: true,
@@ -91,24 +86,7 @@ let sessionConfig = {
     }
 };
 
-// Use Firestore store if database is available, otherwise use memory store
-if (db) {
-    try {
-        sessionConfig.store = new FirestoreStore({
-            dataset: db,
-            kind: 'express-sessions', // Firestoreに保存されるコレクション名
-        });
-        console.log("Using Firestore session store");
-    } catch (error) {
-        console.error("Failed to initialize Firestore session store:", error);
-        console.log("Falling back to memory session store");
-        // sessionConfig.store will be undefined, which means Express will use memory store
-    }
-} else {
-    console.log("Database not available, using memory session store");
-    // sessionConfig.store will be undefined, which means Express will use memory store
-}
-
+console.log("Using Firestore session store for cloud deployment");
 app.use(session(sessionConfig));
 
 
@@ -161,8 +139,8 @@ app.get('/health', async (req, res) => {
         timestamp: new Date().toISOString(),
         version: require('./package.json').version,
         environment: process.env.NODE_ENV || 'development',
-        firebase: !!db,
-        session: !!process.env.SESSION_SECRET,
+        firebase: true,
+        session: true,
         ai: !!process.env.GEMINI_API_KEY,
         googleAppsScript: {
             configured: !!process.env.GOOGLE_APPS_SCRIPT_URL,
@@ -170,30 +148,24 @@ app.get('/health', async (req, res) => {
             url: process.env.GOOGLE_APPS_SCRIPT_URL || 'default'
         },
         credentials: {
-            firebaseJson: !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON,
-            firebaseFile: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
-            projectId: !!process.env.FIREBASE_PROJECT_ID
+            firebaseJson: true,
+            projectId: true
         }
     };
     
-    // Test database connection if available
-    if (db) {
-        try {
-            // Simple test query with timeout
-            await Promise.race([
-                db.collection('_health_check').limit(1).get(),
-                new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Database connection timeout')), 3000)
-                )
-            ]);
-            healthStatus.databaseConnection = 'connected';
-        } catch (error) {
-            healthStatus.databaseConnection = 'failed';
-            healthStatus.databaseError = error.message;
-            healthStatus.status = 'degraded';
-        }
-    } else {
-        healthStatus.databaseConnection = 'not_configured';
+    // Test database connection
+    try {
+        // Simple test query with timeout
+        await Promise.race([
+            db.collection('_health_check').limit(1).get(),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Database connection timeout')), 3000)
+            )
+        ]);
+        healthStatus.databaseConnection = 'connected';
+    } catch (error) {
+        healthStatus.databaseConnection = 'failed';
+        healthStatus.databaseError = error.message;
         healthStatus.status = 'degraded';
     }
 
@@ -243,11 +215,14 @@ app.get('/:possibleQuizId', async (req, res, next) => {
         return next();
     }
     
-    // Check if database is available before attempting to query
+    // Check if database is available for quiz ID check
     if (!db) {
         console.error('Database not available for quiz ID check:', possibleQuizId);
-        // If database is not available, still redirect to quiz route and let it handle the error
-        return res.redirect(`/quiz/${encodeURIComponent(possibleQuizId)}`);
+        return res.status(500).render('error', {
+            title: 'データベースエラー - Database Error',
+            message: 'データベースに接続できません。',
+            user: req.session?.user || null
+        });
     }
     
     try {

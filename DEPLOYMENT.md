@@ -1,51 +1,39 @@
-# Synapse Note - Vercel Deployment Guide
+# Synapse Note - Firebase Cloud Deployment Guide
+
+This application is designed to run exclusively in Firebase/Vercel serverless environments.
 
 ## Environment Variables Setup
 
 ### Required Environment Variables
 
-Copy `.env.example` to `.env` and configure the following variables:
+Configure the following variables in your cloud deployment platform:
 
 #### Core Configuration
-- `PORT` - Port number (default: 3000, automatically set by Vercel)
-- `SESSION_SECRET` - Secret key for session encryption
-- `NODE_ENV` - Environment (development/production)
+- `SESSION_SECRET` - Secret key for session encryption (generate a secure random string)
+- `NODE_ENV` - Set to `production` for cloud deployment
 
-#### Firebase Configuration
-Choose one of the following options:
-
-**Option 1: Service Account JSON (Recommended for Vercel)**
+#### Firebase Configuration (Required)
+**Service Account JSON (Required for Cloud Deployment)**
 ```bash
 GOOGLE_APPLICATION_CREDENTIALS_JSON={"type":"service_account","project_id":"your-project-id",...}
-```
-
-**Option 2: Service Account File Path (Local Development)**
-```bash
-GOOGLE_APPLICATION_CREDENTIALS=./path/to/service-account-key.json
 ```
 
 #### Additional Configuration
 - `FIREBASE_PROJECT_ID` - Your Firebase project ID
 - `GEMINI_API_KEY` - Google AI API key for Gemini integration
 
-## Local Development
+#### Optional Configuration
+- `GOOGLE_APPS_SCRIPT_URL` - External API integration URL
+- `USE_GOOGLE_APPS_SCRIPT` - Enable/disable Google Apps Script integration (default: true)
 
-1. Install dependencies:
-```bash
-npm install
-```
+## Firebase Setup
 
-2. Create `.env` file from template:
-```bash
-cp .env.example .env
-```
-
-3. Configure your environment variables in `.env`
-
-4. Start the development server:
-```bash
-npm run dev
-```
+1. Create a Firebase project at https://console.firebase.google.com/
+2. Enable Firestore Database
+3. Create a service account:
+   - Go to Project Settings > Service Accounts
+   - Generate new private key
+   - Copy the entire JSON content for `GOOGLE_APPLICATION_CREDENTIALS_JSON`
 
 ## Vercel Deployment
 

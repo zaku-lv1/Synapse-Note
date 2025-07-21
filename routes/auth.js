@@ -1,17 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const admin = require('firebase-admin');
-
-// Firestore データベースインスタンス (lazy initialization)
-function getDb() {
-    try {
-        return admin.firestore();
-    } catch (error) {
-        console.error('Firebase not initialized:', error.message);
-        return null;
-    }
-}
+const { getDb } = require('../services/database');
 
 const saltRounds = 10;
 
@@ -21,13 +11,6 @@ router.get('/register', async (req, res) => {
     
     try {
         const db = getDb();
-        if (!db) {
-            return res.render('register', { 
-                error: 'データベースに接続できません。', 
-                user: req.session.user,
-                registrationMessage: ''
-            });
-        }
 
         // システム設定を確認
         const settingsDoc = await db.collection('system_settings').doc('general').get();
@@ -65,13 +48,6 @@ router.get('/login', (req, res) => {
 router.post('/register', async (req, res) => {
     try {
         const db = getDb();
-        if (!db) {
-            return res.render('register', { 
-                error: 'データベースに接続できません。', 
-                user: req.session.user,
-                registrationMessage: ''
-            });
-        }
 
         // システム設定を確認
         const settingsDoc = await db.collection('system_settings').doc('general').get();
@@ -133,12 +109,6 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const db = getDb();
-        if (!db) {
-            return res.render('login', { 
-                error: 'データベースに接続できません。', 
-                user: req.session.user 
-            });
-        }
 
         const { handle, password } = req.body;
         const handleWithAt = handle.startsWith('@') ? handle : '@' + handle;

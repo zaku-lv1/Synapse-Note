@@ -1,7 +1,8 @@
 const express = require('express');
+const { getDb } = require('../services/database');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const admin = require('firebase-admin');
+
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // --- 1. 初期設定 ---

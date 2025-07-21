@@ -8,21 +8,13 @@
  */
 
 const express = require('express');
+const { getDb } = require('../services/database');
 const router = express.Router();
-const admin = require('firebase-admin');
+
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const multer = require('multer');
 
 // --- Firebase/AI初期化 ---
-// Firestore データベースインスタンス (lazy initialization)
-function getDb() {
-    try {
-        return admin.firestore();
-    } catch (error) {
-        console.error('Firebase not initialized:', error.message);
-        return null;
-    }
-}
 
 // Gemini API初期化（APIキーの存在確認）
 let genAI, model;
@@ -175,7 +167,6 @@ ${JSON.stringify(initialQuestions, null, 2)}
         }
     }
 );
-
 
 // ===================== テキスト入力からクイズ作成（AI利用） =====================
 
