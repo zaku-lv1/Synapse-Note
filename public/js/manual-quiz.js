@@ -151,7 +151,7 @@ function addQuestion() {
  */
 function removeQuestion(idx) {
     if (questions.length <= 1) {
-        alert('少なくとも1つの問題が必要です。');
+        showCustomAlert('少なくとも1つの問題が必要です。', 'error');
         return;
     }
     
@@ -194,7 +194,7 @@ function addOption(qIdx) {
     
     // 最大選択肢数の制限（例：10個まで）
     if (questions[qIdx].options.length >= 10) {
-        alert('選択肢は最大10個まで追加できます。');
+        showCustomAlert('選択肢は最大10個まで追加できます。', 'warning');
         return;
     }
     
@@ -209,7 +209,7 @@ function addOption(qIdx) {
  */
 function removeOption(qIdx, oIdx) {
     if (questions[qIdx].options.length <= 2) {
-        alert('選択肢は最低2つ必要です。');
+        showCustomAlert('選択肢は最低2つ必要です。', 'error');
         return;
     }
     

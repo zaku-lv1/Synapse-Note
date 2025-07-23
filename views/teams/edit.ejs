@@ -1,0 +1,267 @@
+<%- include('../partials/header') %>
+
+<main>
+    <div class="form-container">
+        <h2 class="page-title">チーム編集: <%= team.name %></h2>
+        <p class="form-description">チームのメンバーを追加・削除し、ハンタープレイヤーを設定できます。</p>
+        
+        <% if (locals.error) { %>
+            <div class="custom-alert custom-alert-error">
+                <span class="alert-icon">⚠</span>
+                <%= error %>
+                <button class="alert-close" onclick="this.parentElement.style.display='none'">&times;</button>
+            </div>
+        <% } %>
+
+        <form action="/teams/<%= team.id %>/edit" method="POST" id="editTeamForm">
+            <div class="form-group">
+                <label for="teamName">チーム名</label>
+                <input type="text" id="teamName" name="teamName" value="<%= team.name %>" required autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label>現在のメンバー</label>
+                <div id="members-container">
+                    <% if (team.members && team.members.length > 0) { %>
+                        <% team.members.forEach((member, index) => { %>
+                            <div class="member-edit-row">
+                                <input type="text" name="members[]" value="<%= member.name %>" placeholder="メンバー名" autocomplete="off">
+                                <select name="memberRoles[]">
+                                    <option value="player" <%= member.role === 'player' ? 'selected' : '' %>>プレイヤー</option>
+                                    <option value="hunter" <%= member.role === 'hunter' ? 'selected' : '' %>>ハンター</option>
+                                </select>
+                                <button type="button" class="remove-member-btn" onclick="removeMember(this)">削除</button>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <div class="member-edit-row">
+                            <input type="text" name="members[]" placeholder="メンバー名を入力" autocomplete="off">
+                            <select name="memberRoles[]">
+                                <option value="player">プレイヤー</option>
+                                <option value="hunter">ハンター</option>
+                            </select>
+                            <button type="button" class="remove-member-btn" onclick="removeMember(this)">削除</button>
+                        </div>
+                    <% } %>
+                </div>
+                <button type="button" class="add-member-btn" onclick="addMember()">メンバー追加</button>
+            </div>
+
+            <div class="member-summary">
+                <div class="summary-item">
+                    <strong>総メンバー数:</strong> <span id="total-members">0</span>人
+                </div>
+                <div class="summary-item">
+                    <strong>ハンター数:</strong> <span id="hunter-count">0</span>人
+                </div>
+                <div class="summary-item">
+                    <strong>プレイヤー数:</strong> <span id="player-count">0</span>人
+                </div>
+            </div>
+
+            <div class="hunter-selection-info">
+                <h3>ハンタープレイヤーについて</h3>
+                <p>ハンタープレイヤーは他のチームのプレイヤーを「ハント」する特別な役割を持ちます。</p>
+                <p>ドロップダウンからメンバーの役割を「ハンター」に変更することで設定できます。</p>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="button">変更を保存</button>
+                <a href="/teams/<%= team.id %>" class="button button-secondary">キャンセル</a>
+                <button type="button" class="button button-danger" onclick="confirmDeleteTeam()">チーム削除</button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script>
+function addMember() {
+    const container = document.getElementById('members-container');
+    const newRow = document.createElement('div');
+    newRow.className = 'member-edit-row';
+    newRow.innerHTML = `
+        <input type="text" name="members[]" placeholder="メンバー名を入力" autocomplete="off">
+        <select name="memberRoles[]">
+            <option value="player">プレイヤー</option>
+            <option value="hunter">ハンター</option>
+        </select>
+        <button type="button" class="remove-member-btn" onclick="removeMember(this)">削除</button>
+    `;
+    container.appendChild(newRow);
+    updateMemberSummary();
+}
+
+function removeMember(button) {
+    const container = document.getElementById('members-container');
+    if (container.children.length > 1) {
+        button.parentElement.remove();
+        updateMemberSummary();
+    } else {
+        showCustomAlert('最低1人のメンバーが必要です', 'error');
+    }
+}
+
+function updateMemberSummary() {
+    const memberRows = document.querySelectorAll('.member-edit-row');
+    let totalMembers = 0;
+    let hunterCount = 0;
+    let playerCount = 0;
+    
+    memberRows.forEach(row => {
+        const nameInput = row.querySelector('input[name="members[]"]');
+        const roleSelect = row.querySelector('select[name="memberRoles[]"]');
+        
+        if (nameInput.value.trim()) {
+            totalMembers++;
+            if (roleSelect.value === 'hunter') {
+                hunterCount++;
+            } else {
+                playerCount++;
+            }
+        }
+    });
+    
+    document.getElementById('total-members').textContent = totalMembers;
+    document.getElementById('hunter-count').textContent = hunterCount;
+    document.getElementById('player-count').textContent = playerCount;
+}
+
+function confirmDeleteTeam() {
+    if (confirm('本当にこのチームを削除しますか？この操作は取り消せません。')) {
+        // TODO: チーム削除の実装
+        showCustomAlert('チーム削除機能はまだ実装されていません', 'warning');
+    }
+}
+
+// ページ読み込み時とフォーム変更時にサマリーを更新
+document.addEventListener('DOMContentLoaded', function() {
+    updateMemberSummary();
+    
+    // メンバー名や役割が変更されたときにサマリーを更新
+    document.addEventListener('input', function(e) {
+        if (e.target.name === 'members[]') {
+            updateMemberSummary();
+        }
+    });
+    
+    document.addEventListener('change', function(e) {
+        if (e.target.name === 'memberRoles[]') {
+            updateMemberSummary();
+        }
+    });
+});
+</script>
+
+<style>
+.member-edit-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    align-items: center;
+}
+
+.member-edit-row input {
+    flex: 2;
+}
+
+.member-edit-row select {
+    flex: 1;
+    min-width: 120px;
+}
+
+.remove-member-btn, .add-member-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.add-member-btn {
+    background: var(--primary-color);
+    margin-top: 0.5rem;
+}
+
+.remove-member-btn:hover {
+    background: #c82333;
+}
+
+.add-member-btn:hover {
+    background: var(--primary-hover-color);
+}
+
+.member-summary {
+    background: #f8fafd;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin: 1.5rem 0;
+    border: 1px solid var(--border-color);
+}
+
+.summary-item {
+    margin-bottom: 0.5rem;
+}
+
+.summary-item:last-child {
+    margin-bottom: 0;
+}
+
+.hunter-selection-info {
+    background: #e7f3ff;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    margin: 1.5rem 0;
+    border-left: 4px solid var(--primary-color);
+}
+
+.hunter-selection-info h3 {
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+}
+
+.hunter-selection-info p {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+.hunter-selection-info p:last-child {
+    margin-bottom: 0;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.button-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.button-danger:hover {
+    background: #c82333;
+}
+
+@media (max-width: 768px) {
+    .member-edit-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .member-edit-row input,
+    .member-edit-row select {
+        flex: none;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+<%- include('../partials/footer') %>

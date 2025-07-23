@@ -1,0 +1,140 @@
+<%- include('../partials/header') %>
+
+<main>
+    <div class="form-container">
+        <h2 class="page-title">チーム作成</h2>
+        <p class="form-description">新しいチームを作成し、メンバーとハンターを設定します。</p>
+        
+        <% if (locals.error) { %>
+            <div class="custom-alert custom-alert-error">
+                <span class="alert-icon">⚠</span>
+                <%= error %>
+                <button class="alert-close" onclick="this.parentElement.style.display='none'">&times;</button>
+            </div>
+        <% } %>
+
+        <form action="/teams/create" method="POST">
+            <div class="form-group">
+                <label for="teamName">チーム名</label>
+                <input type="text" id="teamName" name="teamName" required placeholder="例: レッドチーム" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="description">説明（任意）</label>
+                <textarea id="description" name="description" rows="3" placeholder="チームの説明を入力してください" autocomplete="off"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="members">メンバー</label>
+                <div id="members-container">
+                    <div class="member-input-row">
+                        <input type="text" name="members[]" placeholder="メンバー名を入力" autocomplete="off">
+                        <select name="memberRoles[]">
+                            <option value="player">プレイヤー</option>
+                            <option value="hunter">ハンター</option>
+                        </select>
+                        <button type="button" class="remove-member-btn" onclick="removeMember(this)">削除</button>
+                    </div>
+                </div>
+                <button type="button" class="add-member-btn" onclick="addMember()">メンバー追加</button>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="button">チーム作成</button>
+                <a href="/teams" class="button button-secondary">キャンセル</a>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script>
+function addMember() {
+    const container = document.getElementById('members-container');
+    const newRow = document.createElement('div');
+    newRow.className = 'member-input-row';
+    newRow.innerHTML = `
+        <input type="text" name="members[]" placeholder="メンバー名を入力" autocomplete="off">
+        <select name="memberRoles[]">
+            <option value="player">プレイヤー</option>
+            <option value="hunter">ハンター</option>
+        </select>
+        <button type="button" class="remove-member-btn" onclick="removeMember(this)">削除</button>
+    `;
+    container.appendChild(newRow);
+}
+
+function removeMember(button) {
+    const container = document.getElementById('members-container');
+    if (container.children.length > 1) {
+        button.parentElement.remove();
+    } else {
+        showCustomAlert('最低1人のメンバーが必要です', 'error');
+    }
+}
+</script>
+
+<style>
+.member-input-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    align-items: center;
+}
+
+.member-input-row input {
+    flex: 2;
+}
+
+.member-input-row select {
+    flex: 1;
+    min-width: 120px;
+}
+
+.remove-member-btn, .add-member-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.add-member-btn {
+    background: var(--primary-color);
+    margin-top: 0.5rem;
+}
+
+.remove-member-btn:hover {
+    background: #c82333;
+}
+
+.add-member-btn:hover {
+    background: var(--primary-hover-color);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+@media (max-width: 768px) {
+    .member-input-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .member-input-row input,
+    .member-input-row select {
+        flex: none;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+<%- include('../partials/footer') %>

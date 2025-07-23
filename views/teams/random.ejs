@@ -1,0 +1,153 @@
+<%- include('../partials/header') %>
+
+<main>
+    <div class="form-container">
+        <h2 class="page-title">ランダムチーム作成</h2>
+        <p class="form-description">8人の参加者を入力してランダムにチームを作成します。</p>
+        
+        <% if (locals.error) { %>
+            <div class="custom-alert custom-alert-error">
+                <span class="alert-icon">⚠</span>
+                <%= error %>
+                <button class="alert-close" onclick="this.parentElement.style.display='none'">&times;</button>
+            </div>
+        <% } %>
+
+        <form action="/teams/random" method="POST" id="randomTeamForm">
+            <div class="form-group">
+                <label>参加者（8人必須）</label>
+                <div id="participants-container">
+                    <% for(let i = 1; i <= 8; i++) { %>
+                        <div class="participant-input-row">
+                            <span class="participant-number"><%= i %></span>
+                            <input type="text" name="participants[]" placeholder="参加者<%= i %>の名前" required autocomplete="off">
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="teamCount">作成するチーム数</label>
+                <select id="teamCount" name="teamCount" required>
+                    <option value="" disabled selected>チーム数を選択</option>
+                    <option value="2">2チーム（4人ずつ）</option>
+                    <option value="4">4チーム（2人ずつ）</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="hunterCount">各チームのハンター数</label>
+                <select id="hunterCount" name="hunterCount" required>
+                    <option value="" disabled selected>ハンター数を選択</option>
+                    <option value="0">ハンターなし</option>
+                    <option value="1">1人</option>
+                    <option value="2">2人</option>
+                </select>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="button">ランダムチーム作成</button>
+                <a href="/teams" class="button button-secondary">キャンセル</a>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('randomTeamForm');
+    const teamCountSelect = document.getElementById('teamCount');
+    const hunterCountSelect = document.getElementById('hunterCount');
+    
+    // Update hunter count options based on team count
+    teamCountSelect.addEventListener('change', function() {
+        const teamCount = parseInt(this.value);
+        const playersPerTeam = 8 / teamCount;
+        
+        hunterCountSelect.innerHTML = '<option value="" disabled selected>ハンター数を選択</option>';
+        hunterCountSelect.innerHTML += '<option value="0">ハンターなし</option>';
+        
+        for (let i = 1; i < playersPerTeam; i++) {
+            hunterCountSelect.innerHTML += `<option value="${i}">${i}人</option>`;
+        }
+    });
+    
+    form.addEventListener('submit', function(e) {
+        const participants = Array.from(document.querySelectorAll('input[name="participants[]"]'))
+            .map(input => input.value.trim())
+            .filter(value => value !== '');
+            
+        if (participants.length < 8) {
+            e.preventDefault();
+            showCustomAlert('8人の参加者が必要です', 'error');
+            return;
+        }
+        
+        // Check for duplicate names
+        const uniqueParticipants = [...new Set(participants)];
+        if (uniqueParticipants.length !== participants.length) {
+            e.preventDefault();
+            showCustomAlert('参加者名に重複があります', 'error');
+            return;
+        }
+    });
+});
+</script>
+
+<style>
+.participant-input-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    gap: 1rem;
+}
+
+.participant-number {
+    background: var(--primary-color);
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.participant-input-row input {
+    flex: 1;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+#participants-container {
+    background: #f8fafd;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .participant-input-row {
+        gap: 0.5rem;
+    }
+    
+    .participant-number {
+        width: 25px;
+        height: 25px;
+        font-size: 0.8rem;
+    }
+}
+</style>
+
+<%- include('../partials/footer') %>

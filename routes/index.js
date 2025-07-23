@@ -197,4 +197,19 @@ router.get('/api-docs', (req, res) => {
     });
 });
 
+/**
+ * 機能テストページの表示
+ * 
+ * 機能:
+ * - 実装された機能をテストするためのページ
+ * - ドロップダウンとカスタムアラートのテスト
+ * - 認証不要でアクセス可能
+ */
+router.get('/test-features', (req, res) => {
+    res.render('test-features', { 
+        title: '機能テスト - Synapse Note',
+        user: req.session?.user || null 
+    });
+});
+
 module.exports = router;

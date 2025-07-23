@@ -5,12 +5,52 @@
  * - モバイルナビゲーションのハンバーガーメニュー制御
  * - PWA（Progressive Web App）機能のService Workerの登録
  * - ユーザーインターフェースの動的な動作制御
+ * - カスタムアラート機能
  * 
  * 開発者向けメモ:
  * - DOM要素の取得時は常にnullチェックを行い、エラーの防止に努める
  * - イベントリスナーの追加は適切なタイミングで行う（DOMContentLoaded後）
  * - ブラウザサポートを考慮したポリフィルの使用
  */
+
+// ===== カスタムアラート機能 =====
+window.showCustomAlert = function(message, type = 'info', duration = 5000) {
+    // アラートタイプのアイコンマッピング
+    const icons = {
+        success: '✓',
+        error: '⚠',
+        warning: '⚠',
+        info: 'ℹ'
+    };
+    
+    // アラート要素を作成
+    const alert = document.createElement('div');
+    alert.className = `custom-alert custom-alert-${type}`;
+    alert.innerHTML = `
+        <span class="alert-icon">${icons[type] || icons.info}</span>
+        ${message}
+        <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+    `;
+    
+    // ページの最初の .form-container または body に追加
+    const container = document.querySelector('.form-container') || document.body;
+    container.insertBefore(alert, container.firstChild);
+    
+    // 自動削除
+    if (duration > 0) {
+        setTimeout(() => {
+            if (alert.parentElement) {
+                alert.remove();
+            }
+        }, duration);
+    }
+};
+
+// browser alert を置き換える関数
+window.originalAlert = window.alert;
+window.alert = function(message) {
+    window.showCustomAlert(message, 'info');
+};
 
 // ===== DOM読み込み完了後の初期化処理 =====
 document.addEventListener('DOMContentLoaded', function() {

@@ -1,0 +1,279 @@
+<%- include('../partials/header') %>
+
+<main>
+    <div class="form-container">
+        <h2 class="page-title"><%= team.name %></h2>
+        <p class="form-description">チームの詳細情報とメンバー一覧です。</p>
+        
+        <% if (locals.success) { %>
+            <div class="custom-alert custom-alert-success">
+                <span class="alert-icon">✓</span>
+                <%= success %>
+                <button class="alert-close" onclick="this.parentElement.style.display='none'">&times;</button>
+            </div>
+        <% } %>
+
+        <div class="team-info-grid">
+            <div class="team-stats">
+                <h3>チーム統計</h3>
+                <div class="stat-item">
+                    <span class="stat-label">総メンバー数:</span>
+                    <span class="stat-value"><%= team.members ? team.members.length : 0 %>人</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">ハンター数:</span>
+                    <span class="stat-value hunter-count"><%= team.hunters ? team.hunters.length : 0 %>人</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">プレイヤー数:</span>
+                    <span class="stat-value"><%= (team.members ? team.members.length : 0) - (team.hunters ? team.hunters.length : 0) %>人</span>
+                </div>
+            </div>
+
+            <div class="team-actions-card">
+                <h3>操作</h3>
+                <div class="action-buttons">
+                    <a href="/teams/<%= team.id %>/edit" class="button">メンバー編集</a>
+                    <a href="/teams" class="button button-secondary">チーム一覧に戻る</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="members-section">
+            <h3>メンバー一覧</h3>
+            <% if (team.members && team.members.length > 0) { %>
+                <div class="members-grid">
+                    <% team.members.forEach((member, index) => { %>
+                        <div class="member-card <%= member.role === 'hunter' ? 'hunter-member' : 'player-member' %>">
+                            <div class="member-info">
+                                <div class="member-name"><%= member.name %></div>
+                                <div class="member-role">
+                                    <span class="role-badge <%= member.role %>">
+                                        <%= member.role === 'hunter' ? 'ハンター' : 'プレイヤー' %>
+                                    </span>
+                                </div>
+                            </div>
+                            <% if (member.role === 'hunter') { %>
+                                <div class="hunter-indicator">🎯</div>
+                            <% } else { %>
+                                <div class="player-indicator">👤</div>
+                            <% } %>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div class="empty-members">
+                    <p>まだメンバーが追加されていません。</p>
+                    <a href="/teams/<%= team.id %>/edit" class="button">メンバーを追加</a>
+                </div>
+            <% } %>
+        </div>
+
+        <div class="hunter-info-section">
+            <h3>ハンタープレイヤーについて</h3>
+            <div class="info-cards">
+                <div class="info-card">
+                    <h4>ハンターの役割</h4>
+                    <p>ハンタープレイヤーは他のチームのメンバーを探し出し、「ハント」する特別な役割を持ちます。</p>
+                </div>
+                <div class="info-card">
+                    <h4>チーム選択</h4>
+                    <p>ハンタープレイヤーもチームから選択することができ、通常のプレイヤーとハンターの両方の役割を担うことができます。</p>
+                </div>
+                <div class="info-card">
+                    <h4>戦略的要素</h4>
+                    <p>ハンターの配置と数によって、ゲームの戦略と難易度が大きく変わります。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<style>
+.team-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.team-stats, .team-actions-card {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--box-shadow);
+}
+
+.team-stats h3, .team-actions-card h3 {
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    font-weight: 500;
+}
+
+.stat-value {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.hunter-count {
+    color: #e74c3c;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.members-section {
+    margin: 2rem 0;
+}
+
+.members-section h3 {
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+}
+
+.members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.member-card {
+    background: var(--surface-color);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.hunter-member {
+    border-color: #e74c3c;
+    background: #fff5f5;
+}
+
+.player-member {
+    border-color: var(--primary-color);
+    background: #f8fafd;
+}
+
+.member-info {
+    flex: 1;
+}
+
+.member-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.role-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.role-badge.hunter {
+    background: #e74c3c;
+    color: white;
+}
+
+.role-badge.player {
+    background: var(--primary-color);
+    color: white;
+}
+
+.hunter-indicator, .player-indicator {
+    font-size: 1.5rem;
+    margin-left: 1rem;
+}
+
+.empty-members {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted-text-color);
+    background: #f8fafd;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.empty-members p {
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+}
+
+.hunter-info-section {
+    margin-top: 3rem;
+}
+
+.hunter-info-section h3 {
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+}
+
+.info-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.info-card {
+    background: #f0f7ff;
+    border: 1px solid #b8daff;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+}
+
+.info-card h4 {
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+}
+
+.info-card p {
+    line-height: 1.6;
+    color: var(--text-color);
+}
+
+@media (max-width: 768px) {
+    .team-info-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .members-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .info-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+}
+</style>
+
+<%- include('../partials/footer') %>

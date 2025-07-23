@@ -1,0 +1,137 @@
+<%- include('partials/header') %>
+
+<main>
+    <div class="form-container">
+        <h2 class="page-title">機能テストページ</h2>
+        <p class="form-description">実装した機能をテストするためのページです。</p>
+        
+        <div class="test-section">
+            <h3>ドロップダウンテスト</h3>
+            <p>ドロップダウンの文字が白くなって見えなくなる問題が修正されています。</p>
+            
+            <div class="form-group">
+                <label for="testSelect">テスト用ドロップダウン</label>
+                <select id="testSelect" name="testSelect">
+                    <option value="" disabled selected>選択してください</option>
+                    <option value="option1">オプション1</option>
+                    <option value="option2">オプション2</option>
+                    <option value="option3">オプション3</option>
+                    <optgroup label="グループ1">
+                        <option value="group1-option1">グループ1 - オプション1</option>
+                        <option value="group1-option2">グループ1 - オプション2</option>
+                    </optgroup>
+                    <optgroup label="グループ2">
+                        <option value="group2-option1">グループ2 - オプション1</option>
+                        <option value="group2-option2">グループ2 - オプション2</option>
+                    </optgroup>
+                </select>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>カスタムアラートテスト</h3>
+            <p>ブラウザの標準アラートを置き換えたカスタムアラートをテストできます。</p>
+            
+            <div class="alert-test-buttons">
+                <button type="button" class="button" onclick="showCustomAlert('成功メッセージのテストです！', 'success')">成功アラート</button>
+                <button type="button" class="button" onclick="showCustomAlert('エラーメッセージのテストです！', 'error')">エラーアラート</button>
+                <button type="button" class="button" onclick="showCustomAlert('警告メッセージのテストです！', 'warning')">警告アラート</button>
+                <button type="button" class="button" onclick="showCustomAlert('情報メッセージのテストです！', 'info')">情報アラート</button>
+                <button type="button" class="button button-secondary" onclick="alert('従来のalert()も置き換えられています')">標準alert()テスト</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>チーム管理機能</h3>
+            <p>実装されたチーム管理機能にアクセスできます。</p>
+            
+            <div class="team-features">
+                <div class="feature-card">
+                    <h4>✓ ハンタープレイヤーとチーム選択</h4>
+                    <p>ハンタープレイヤーもチームから選択できるようになりました。</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4>✓ ランダムチーム作成（8人必須）</h4>
+                    <p>ランダムチーム作成には8人の参加者が必要です。</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4>✓ メンバー編集機能</h4>
+                    <p>チームメンバーの追加・削除ができます。</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4>✓ カスタムアラート</h4>
+                    <p>CSSを活用した自作アラートを実装しました。</p>
+                </div>
+            </div>
+            
+            <p><strong>注意:</strong> チーム管理機能を利用するにはログインが必要です。</p>
+            <a href="/teams" class="button">チーム管理ページへ</a>
+        </div>
+    </div>
+</main>
+
+<style>
+.test-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: #f8fafd;
+}
+
+.test-section h3 {
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.alert-test-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.alert-test-buttons .button {
+    margin-bottom: 0.5rem;
+}
+
+.team-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.feature-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.feature-card h4 {
+    margin-bottom: 0.5rem;
+    color: var(--correct-color);
+}
+
+.feature-card p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--muted-text-color);
+}
+
+@media (max-width: 768px) {
+    .alert-test-buttons {
+        flex-direction: column;
+    }
+    
+    .team-features {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<%- include('partials/footer') %>
