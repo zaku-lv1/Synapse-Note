@@ -31,12 +31,12 @@ router.get('/register', (req, res) => { if (req.session.user) return res.redirec
 router.get('/login', (req, res) => { if (req.session.user) return res.redirect('/dashboard'); res.render('login', { error: null, user: req.session.user }); });
 router.get('/dashboard', requireLogin, (req, res) => res.render('dashboard', { user: req.session.user }));
 router.get('/create-quiz', requireLogin, (req, res) => res.render('create-quiz', { user: req.session.user }));
-router.get('/my-quizzes', requireLogin, async (req, res) => { try { const quizzesSnapshot = await db.collection('quizzes').where('ownerId', '==', req.session.user.id).orderBy('createdAt', 'desc').get(); const quizzes = quizzesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() })); res.render('my-quizzes', { user: req.session.user, quizzes: quizzes }); } catch (error) { res.status(500).send("サーバーエラー"); } });
+router.get('/my-quizzes', requireLogin, async (req, res) => { try { const quizzesSnapshot = await db.collection('quizzes').where('ownerId', '==', req.session.user.uid).orderBy('createdAt', 'desc').get(); const quizzes = quizzesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() })); res.render('my-quizzes', { user: req.session.user, quizzes: quizzes }); } catch (error) { res.status(500).send("サーバーエラー"); } });
 router.get('/public-quizzes', async (req, res) => { try { const quizzesSnapshot = await db.collection('quizzes').where('visibility', '==', 'public').orderBy('createdAt', 'desc').limit(50).get(); const quizzes = quizzesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); res.render('public-quizzes', { user: req.session.user, quizzes: quizzes }); } catch (error) { res.status(500).send("サーバーエラー"); } });
-router.get('/my-history', requireLogin, async (req, res) => { try { const attemptsSnapshot = await db.collection('quiz_attempts').where('userId', '==', req.session.user.id).orderBy('attemptedAt', 'desc').get(); const attempts = attemptsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), attemptedAt: doc.data().attemptedAt.toDate() })); res.render('my-history', { user: req.session.user, attempts: attempts }); } catch (error) { res.status(500).send("サーバーエラー"); } });
+router.get('/my-history', requireLogin, async (req, res) => { try { const attemptsSnapshot = await db.collection('quiz_attempts').where('userId', '==', req.session.user.uid).orderBy('attemptedAt', 'desc').get(); const attempts = attemptsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), attemptedAt: doc.data().attemptedAt.toDate() })); res.render('my-history', { user: req.session.user, attempts: attempts }); } catch (error) { res.status(500).send("サーバーエラー"); } });
 router.get('/quiz/:quizId', async (req, res) => { try { const quizDoc = await db.collection('quizzes').doc(req.params.quizId).get(); if (!quizDoc.exists) return res.status(404).send("クイズが見つかりません。"); const quiz = quizDoc.data(); if (quiz.visibility === 'private' && (!req.session.user || (quiz.ownerId !== req.session.user.uid && !req.session.user.isAdmin))) return res.status(403).send("アクセス権限がありません。"); res.render('solve-quiz', { user: req.session.user, quiz: { id: quizDoc.id, ...quiz } }); } catch (error) { res.status(500).send("サーバーエラー"); } });
 router.get('/quiz/:quizId/edit', requireLogin, async (req, res) => { try { const quizDoc = await db.collection('quizzes').doc(req.params.quizId).get(); if (!quizDoc.exists) return res.status(404).send("クイズが見つかりません。"); const quiz = quizDoc.data(); if (quiz.ownerId !== req.session.user.uid && !req.session.user.isAdmin) return res.status(403).send("編集権限がありません。"); res.render('edit-quiz', { user: req.session.user, quiz: { id: quizDoc.id, ...quiz } }); } catch (error) { res.status(500).send("サーバーエラー"); } });
-router.get('/quiz/:quizId/delete', requireLogin, async (req, res) => { try { const quizRef = db.collection('quizzes').doc(req.params.quizId); const doc = await quizRef.get(); if (!doc.exists || doc.data().ownerId !== req.session.user.id) return res.status(403).send("削除権限がありません。"); await quizRef.delete(); res.redirect('/my-quizzes'); } catch (error) { res.status(500).send("サーバーエラー"); } });
+router.get('/quiz/:quizId/delete', requireLogin, async (req, res) => { try { const quizRef = db.collection('quizzes').doc(req.params.quizId); const doc = await quizRef.get(); if (!doc.exists || (doc.data().ownerId !== req.session.user.uid && !req.session.user.isAdmin)) return res.status(403).send("削除権限がありません。"); await quizRef.delete(); res.redirect('/my-quizzes'); } catch (error) { res.status(500).send("サーバーエラー"); } });
 
 // =================================================================
 // --- 4. 機能ルート (POST) ---
@@ -143,7 +143,7 @@ ${JSON.stringify(answers, null, 2)}
         const attemptRef = db.collection('quiz_attempts').doc();
         await attemptRef.set({
             id: attemptRef.id,
-            userId: req.session.user.id,
+            userId: req.session.user.uid,
             quizId: quiz.id || null, // 下書きの場合はnull
             quizTitle: quiz.title,
             totalScore, maxScore,
@@ -167,7 +167,7 @@ router.post('/save-quiz-from-draft', requireLogin, async (req, res) => {
         
         const newQuiz = {
             id: quizRef.id,
-            ownerId: req.session.user.id,
+            ownerId: req.session.user.uid,
             ownerUsername: req.session.user.username,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             ...quizData
@@ -182,6 +182,6 @@ router.post('/save-quiz-from-draft', requireLogin, async (req, res) => {
 });
 
 // (クイズ更新ルートは変更なし)
-router.post('/quiz/:quizId/edit', requireLogin, async (req, res) => { try { const quizId = req.params.quizId; const userId = req.session.user.id; const { title, visibility, questions } = req.body; const quizRef = db.collection('quizzes').doc(quizId); const doc = await quizRef.get(); if (!doc.exists || doc.data().ownerId !== userId) return res.status(403).send("編集権限がありません。"); const updatedQuestions = questions.map(q => ({ ...q, points: parseInt(q.points, 10) || 0 })); await quizRef.update({ title, visibility, questions: updatedQuestions, updatedAt: admin.firestore.FieldValue.serverTimestamp() }); res.redirect('/my-quizzes'); } catch (error) { res.status(500).send("サーバーエラー"); } });
+router.post('/quiz/:quizId/edit', requireLogin, async (req, res) => { try { const quizId = req.params.quizId; const userId = req.session.user.uid; const { title, visibility, questions } = req.body; const quizRef = db.collection('quizzes').doc(quizId); const doc = await quizRef.get(); if (!doc.exists || (doc.data().ownerId !== userId && !req.session.user.isAdmin)) return res.status(403).send("編集権限がありません。"); const updatedQuestions = questions.map(q => ({ ...q, points: parseInt(q.points, 10) || 0 })); await quizRef.update({ title, visibility, questions: updatedQuestions, updatedAt: admin.firestore.FieldValue.serverTimestamp() }); res.redirect('/my-quizzes'); } catch (error) { res.status(500).send("サーバーエラー"); } });
 
 module.exports = router;

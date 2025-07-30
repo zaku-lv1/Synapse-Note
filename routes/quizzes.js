@@ -577,7 +577,7 @@ router.get('/:quizId/delete', requireLogin, async (req, res) => {
 
         const quizRef = db.collection('quizzes').doc(req.params.quizId);
         const doc = await quizRef.get();
-        if (!doc.exists || doc.data().ownerId !== req.session.user.uid) return res.status(403).send("削除権限がありません。");
+        if (!doc.exists || (doc.data().ownerId !== req.session.user.uid && !req.session.user.isAdmin)) return res.status(403).send("削除権限がありません。");
         await quizRef.delete();
         res.redirect('/quiz/my-quizzes');
     } catch (error) {
