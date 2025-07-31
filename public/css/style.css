@@ -335,10 +335,10 @@ footer {
 /* ===== 認証ページコンテナ ===== */
 .auth-container {
   width: 100%;
-  max-width: min(420px, 95vw);           /* レスポンシブ最大幅 */
+  max-width: min(680px, 95vw);           /* より横長に変更: 420px → 680px */
   margin: clamp(2rem, 5vw, 3rem) auto;   /* より安定したマージン */
   background: var(--surface-color);
-  padding: clamp(2rem, 5vw, 3rem) clamp(1.5rem, 4vw, 2.5rem); /* より余裕のあるパディング */
+  padding: clamp(2rem, 5vw, 3rem) clamp(2rem, 5vw, 3.5rem); /* より横方向のパディングを増加 */
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   border: 1px solid rgba(0, 0, 0, 0.05); /* 微細なボーダーで安定感向上 */
@@ -359,6 +359,8 @@ footer {
   display: flex;
   flex-direction: column;
   width: 100%;
+  max-width: 500px; /* フォーム内容の最大幅を制限してバランスを取る */
+  margin: 0 auto;   /* フォームを中央寄せ */
 }
 
 .auth-container .form-group { 

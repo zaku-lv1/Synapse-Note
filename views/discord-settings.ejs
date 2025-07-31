@@ -1,0 +1,331 @@
+<%- include('partials/header') %>
+
+<div class="profile-edit-container">
+    <div class="form-header">
+        <h1>Discord設定</h1>
+        <a href="/profile" class="btn btn-secondary">戻る</a>
+    </div>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-error">
+            <%= error %>
+        </div>
+    <% } %>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+        <div class="alert alert-success">
+            <%= success %>
+        </div>
+    <% } %>
+
+    <div class="discord-settings-section">
+        <h2>Discord ID & ニックネーム管理</h2>
+        <p class="section-description">
+            Discord IDとニックネームを登録することで、プロンプト内でニックネームを使用してDiscordの会話を参照できるようになります。
+        </p>
+
+        <!-- 登録済みDiscord ID一覧 -->
+        <div class="discord-list-section">
+            <h3>登録済みDiscord設定</h3>
+            <% if (discordMappings && discordMappings.length > 0) { %>
+                <div class="discord-list">
+                    <% discordMappings.forEach((mapping, index) => { %>
+                        <div class="discord-item">
+                            <div class="discord-info">
+                                <div class="discord-nickname">
+                                    <strong><%= mapping.nickname %></strong>
+                                </div>
+                                <div class="discord-id">
+                                    Discord ID: <%= mapping.discordId %>
+                                </div>
+                                <% if (mapping.description) { %>
+                                    <div class="discord-description">
+                                        <%= mapping.description %>
+                                    </div>
+                                <% } %>
+                            </div>
+                            <div class="discord-actions">
+                                <button type="button" class="btn btn-sm btn-secondary edit-discord-btn" 
+                                        data-index="<%= index %>"
+                                        data-nickname="<%= mapping.nickname %>"
+                                        data-discord-id="<%= mapping.discordId %>"
+                                        data-description="<%= mapping.description || '' %>">
+                                    編集
+                                </button>
+                                <form action="/profile/discord/delete" method="POST" style="display: inline;">
+                                    <input type="hidden" name="index" value="<%= index %>">
+                                    <button type="submit" class="btn btn-sm btn-danger" 
+                                            onclick="return confirm('この設定を削除しますか？')">
+                                        削除
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } else { %>
+                <div class="no-discord-message">
+                    <p>まだDiscord設定が登録されていません。</p>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- 新規追加・編集フォーム -->
+        <div class="add-discord-section">
+            <h3 id="form-title">新しいDiscord設定を追加</h3>
+            <form action="/profile/discord/add" method="POST" id="discord-form" class="discord-form">
+                <input type="hidden" name="editIndex" id="editIndex" value="">
+                
+                <div class="form-group">
+                    <label for="nickname">ニックネーム <span class="required">*</span></label>
+                    <input 
+                        type="text" 
+                        id="nickname" 
+                        name="nickname" 
+                        required
+                        maxlength="30"
+                        placeholder="例: 田中さん、チームリーダー"
+                        autocomplete="off"
+                    >
+                    <small class="help-text">プロンプト内で使用するニックネーム（30文字以内）</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="discordId">Discord ID <span class="required">*</span></label>
+                    <input 
+                        type="text" 
+                        id="discordId" 
+                        name="discordId" 
+                        required
+                        pattern="[0-9]{17,19}"
+                        placeholder="例: 123456789012345678"
+                        autocomplete="off"
+                    >
+                    <small class="help-text">18-19桁の数字のDiscord ID</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">説明（任意）</label>
+                    <textarea 
+                        id="description" 
+                        name="description" 
+                        rows="2" 
+                        maxlength="100"
+                        placeholder="この設定についての説明..."
+                        autocomplete="off"
+                    ></textarea>
+                    <div class="char-counter">
+                        <span id="descCounter">0</span>/100文字
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="submit-btn">追加</button>
+                    <button type="button" class="btn btn-secondary" id="cancel-btn" style="display: none;">キャンセル</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 使用方法の説明 -->
+        <div class="usage-section">
+            <h3>使用方法</h3>
+            <div class="usage-content">
+                <p>登録したニックネームは、以下のようにプロンプト内で使用できます：</p>
+                <div class="usage-example">
+                    <code>@田中さん の発言を参考にして...</code><br>
+                    <code>チームリーダー が言っていた内容について...</code>
+                </div>
+                <p class="usage-note">
+                    ※ システムが自動的にニックネームをDiscord IDに関連付けて処理します。
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 文字数カウンター
+    const descTextarea = document.getElementById('description');
+    const descCounter = document.getElementById('descCounter');
+    
+    function updateCounter() {
+        const count = descTextarea.value.length;
+        descCounter.textContent = count;
+        
+        if (count > 80) {
+            descCounter.style.color = '#e74c3c';
+        } else {
+            descCounter.style.color = '#666';
+        }
+    }
+    
+    descTextarea.addEventListener('input', updateCounter);
+    updateCounter(); // 初期表示
+
+    // 編集機能
+    const editButtons = document.querySelectorAll('.edit-discord-btn');
+    const form = document.getElementById('discord-form');
+    const formTitle = document.getElementById('form-title');
+    const submitBtn = document.getElementById('submit-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const editIndexInput = document.getElementById('editIndex');
+
+    editButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = this.dataset.index;
+            const nickname = this.dataset.nickname;
+            const discordId = this.dataset.discordId;
+            const description = this.dataset.description;
+
+            // フォームを編集モードに切り替え
+            document.getElementById('nickname').value = nickname;
+            document.getElementById('discordId').value = discordId;
+            document.getElementById('description').value = description;
+            editIndexInput.value = index;
+
+            // UIを編集モードに
+            formTitle.textContent = 'Discord設定を編集';
+            submitBtn.textContent = '更新';
+            cancelBtn.style.display = 'inline-block';
+            form.action = '/profile/discord/update';
+
+            // フォームまでスクロール
+            form.scrollIntoView({ behavior: 'smooth' });
+            
+            updateCounter();
+        });
+    });
+
+    // キャンセルボタン
+    cancelBtn.addEventListener('click', function() {
+        // フォームをリセット
+        form.reset();
+        editIndexInput.value = '';
+        
+        // UIを追加モードに戻す
+        formTitle.textContent = '新しいDiscord設定を追加';
+        submitBtn.textContent = '追加';
+        cancelBtn.style.display = 'none';
+        form.action = '/profile/discord/add';
+        
+        updateCounter();
+    });
+</script>
+
+<style>
+.discord-settings-section {
+    margin-top: 2rem;
+}
+
+.section-description {
+    color: #666;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.discord-list-section {
+    margin-bottom: 3rem;
+}
+
+.discord-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.discord-item {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.discord-info {
+    flex: 1;
+}
+
+.discord-nickname {
+    font-size: 1.1rem;
+    margin-bottom: 0.3rem;
+}
+
+.discord-id {
+    color: #666;
+    font-size: 0.9rem;
+    font-family: monospace;
+    margin-bottom: 0.3rem;
+}
+
+.discord-description {
+    color: #888;
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+.discord-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.no-discord-message {
+    text-align: center;
+    padding: 2rem;
+    background: #f8f9fa;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+    color: #666;
+}
+
+.add-discord-section {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.discord-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.usage-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.usage-example {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 1rem;
+    font-family: monospace;
+    margin: 1rem 0;
+}
+
+.usage-note {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+}
+
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+}
+
+.alert-success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+</style>
+
+<%- include('partials/footer') %>

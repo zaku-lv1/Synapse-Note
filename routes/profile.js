@@ -193,6 +193,223 @@ router.get('/:handle', async (req, res) => {
     }
 });
 
+// Discord設定ページ
+router.get('/discord', requireAuth, async (req, res) => {
+    try {
+        const db = getDb();
+        if (!db) {
+            return res.status(500).render('error', {
+                message: 'データベースに接続できません。',
+                user: req.session.user
+            });
+        }
+
+        const userId = req.session.user.uid;
+        const userDoc = await db.collection('users').doc(userId).get();
+        
+        if (!userDoc.exists) {
+            return res.redirect('/login');
+        }
+        
+        const userData = userDoc.data();
+        const discordMappings = userData.discordMappings || [];
+        
+        res.render('discord-settings', { 
+            user: userData,
+            discordMappings,
+            title: 'Discord設定',
+            error: req.query.error || null,
+            success: req.query.success || null
+        });
+    } catch (error) {
+        console.error('Discord設定ページエラー:', error);
+        res.status(500).render('error', { message: 'ページの読み込みに失敗しました' });
+    }
+});
+
+// Discord設定追加
+router.post('/discord/add', requireAuth, async (req, res) => {
+    try {
+        const db = getDb();
+        if (!db) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('データベースに接続できません。'));
+        }
+
+        const userId = req.session.user.uid;
+        const { nickname, discordId, description } = req.body;
+        
+        // バリデーション
+        if (!nickname || !discordId) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('ニックネームとDiscord IDは必須です。'));
+        }
+        
+        if (nickname.trim().length > 30) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('ニックネームは30文字以内で入力してください。'));
+        }
+        
+        if (!/^[0-9]{17,19}$/.test(discordId.trim())) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('Discord IDは17-19桁の数字で入力してください。'));
+        }
+        
+        if (description && description.trim().length > 100) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('説明は100文字以内で入力してください。'));
+        }
+
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (!userDoc.exists) {
+            return res.redirect('/login');
+        }
+        
+        const userData = userDoc.data();
+        const discordMappings = userData.discordMappings || [];
+        
+        // 重複チェック（ニックネームとDiscord ID）
+        const nicknameExists = discordMappings.some(mapping => mapping.nickname === nickname.trim());
+        const discordIdExists = discordMappings.some(mapping => mapping.discordId === discordId.trim());
+        
+        if (nicknameExists) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('このニックネームは既に登録されています。'));
+        }
+        
+        if (discordIdExists) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('このDiscord IDは既に登録されています。'));
+        }
+        
+        // 最大登録数チェック（10個まで）
+        if (discordMappings.length >= 10) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('最大10個まで登録できます。'));
+        }
+        
+        const newMapping = {
+            nickname: nickname.trim(),
+            discordId: discordId.trim(),
+            description: description ? description.trim() : '',
+            createdAt: new Date()
+        };
+        
+        discordMappings.push(newMapping);
+        
+        await db.collection('users').doc(userId).update({
+            discordMappings: discordMappings,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        
+        res.redirect('/profile/discord?success=' + encodeURIComponent('Discord設定を追加しました。'));
+    } catch (error) {
+        console.error('Discord設定追加エラー:', error);
+        res.redirect('/profile/discord?error=' + encodeURIComponent('設定の追加に失敗しました。'));
+    }
+});
+
+// Discord設定更新
+router.post('/discord/update', requireAuth, async (req, res) => {
+    try {
+        const db = getDb();
+        if (!db) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('データベースに接続できません。'));
+        }
+
+        const userId = req.session.user.uid;
+        const { editIndex, nickname, discordId, description } = req.body;
+        
+        // バリデーション
+        if (!nickname || !discordId || editIndex === '') {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('必要な情報が不足しています。'));
+        }
+        
+        const index = parseInt(editIndex);
+        if (isNaN(index) || index < 0) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('無効なインデックスです。'));
+        }
+
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (!userDoc.exists) {
+            return res.redirect('/login');
+        }
+        
+        const userData = userDoc.data();
+        const discordMappings = userData.discordMappings || [];
+        
+        if (index >= discordMappings.length) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('更新対象が見つかりません。'));
+        }
+        
+        // 重複チェック（編集中のもの以外）
+        const nicknameExists = discordMappings.some((mapping, i) => i !== index && mapping.nickname === nickname.trim());
+        const discordIdExists = discordMappings.some((mapping, i) => i !== index && mapping.discordId === discordId.trim());
+        
+        if (nicknameExists) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('このニックネームは既に登録されています。'));
+        }
+        
+        if (discordIdExists) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('このDiscord IDは既に登録されています。'));
+        }
+        
+        // 更新
+        discordMappings[index] = {
+            ...discordMappings[index],
+            nickname: nickname.trim(),
+            discordId: discordId.trim(),
+            description: description ? description.trim() : '',
+            updatedAt: new Date()
+        };
+        
+        await db.collection('users').doc(userId).update({
+            discordMappings: discordMappings,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        
+        res.redirect('/profile/discord?success=' + encodeURIComponent('Discord設定を更新しました。'));
+    } catch (error) {
+        console.error('Discord設定更新エラー:', error);
+        res.redirect('/profile/discord?error=' + encodeURIComponent('設定の更新に失敗しました。'));
+    }
+});
+
+// Discord設定削除
+router.post('/discord/delete', requireAuth, async (req, res) => {
+    try {
+        const db = getDb();
+        if (!db) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('データベースに接続できません。'));
+        }
+
+        const userId = req.session.user.uid;
+        const { index } = req.body;
+        
+        const deleteIndex = parseInt(index);
+        if (isNaN(deleteIndex) || deleteIndex < 0) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('無効なインデックスです。'));
+        }
+
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (!userDoc.exists) {
+            return res.redirect('/login');
+        }
+        
+        const userData = userDoc.data();
+        const discordMappings = userData.discordMappings || [];
+        
+        if (deleteIndex >= discordMappings.length) {
+            return res.redirect('/profile/discord?error=' + encodeURIComponent('削除対象が見つかりません。'));
+        }
+        
+        // 削除
+        discordMappings.splice(deleteIndex, 1);
+        
+        await db.collection('users').doc(userId).update({
+            discordMappings: discordMappings,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        
+        res.redirect('/profile/discord?success=' + encodeURIComponent('Discord設定を削除しました。'));
+    } catch (error) {
+        console.error('Discord設定削除エラー:', error);
+        res.redirect('/profile/discord?error=' + encodeURIComponent('設定の削除に失敗しました。'));
+    }
+});
+
 // プロフィール更新
 router.post('/update', requireAuth, async (req, res) => {
     try {

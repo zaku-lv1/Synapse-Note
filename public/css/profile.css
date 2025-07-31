@@ -232,3 +232,59 @@
         font-size: 1.5rem;
     }
 }
+
+/* ===== Discord設定表示エリア ===== */
+.discord-mappings {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.discord-mapping-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.discord-mapping-item:hover {
+    background: #e9ecef;
+}
+
+.discord-nickname {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.discord-id {
+    font-size: 0.85rem;
+    color: #666;
+    font-family: monospace;
+}
+
+.discord-more {
+    padding: 0.5rem 1rem;
+    color: #666;
+    font-style: italic;
+    text-align: center;
+}
+
+.discord-manage-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    text-align: center;
+    border-top: 1px solid #e9ecef;
+    margin-top: 0.5rem;
+    transition: color 0.2s ease;
+}
+
+.discord-manage-link:hover {
+    color: var(--primary-hover-color);
+    text-decoration: underline;
+}

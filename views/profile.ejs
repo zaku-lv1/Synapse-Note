@@ -13,6 +13,7 @@
         <% if (isOwnProfile) { %>
             <div class="profile-actions">
                 <a href="/profile/edit" class="btn btn-primary">プロフィール編集</a>
+                <a href="/profile/discord" class="btn btn-secondary">Discord設定</a>
             </div>
         <% } %>
     </div>
@@ -64,6 +65,26 @@
                 </div>
             </div>
         </div>
+
+        <% if (isOwnProfile && user.discordMappings && user.discordMappings.length > 0) { %>
+            <div class="profile-section">
+                <h3>Discord設定</h3>
+                <div class="discord-mappings">
+                    <% user.discordMappings.slice(0, 3).forEach(mapping => { %>
+                        <div class="discord-mapping-item">
+                            <span class="discord-nickname"><%= mapping.nickname %></span>
+                            <span class="discord-id">ID: <%= mapping.discordId %></span>
+                        </div>
+                    <% }); %>
+                    <% if (user.discordMappings.length > 3) { %>
+                        <div class="discord-more">
+                            他 <%= user.discordMappings.length - 3 %> 件...
+                        </div>
+                    <% } %>
+                    <a href="/profile/discord" class="discord-manage-link">設定を管理 →</a>
+                </div>
+            </div>
+        <% } %>
     </div>
 </div>
 
