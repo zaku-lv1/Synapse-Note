@@ -1,0 +1,619 @@
+<%- include('partials/header') %>
+
+<div class="demo-container">
+    <div class="demo-header">
+        <h1>Discord ニックネーム解決デモ</h1>
+        <p class="demo-description">
+            このデモページでは、プロンプト内でDiscordのニックネームがどのように解決されるかを確認できます。
+        </p>
+    </div>
+
+    <div class="demo-content">
+        <!-- 入力セクション -->
+        <div class="demo-section">
+            <h3>プロンプトを入力</h3>
+            <div class="form-group">
+                <label for="promptText">プロンプトテキスト</label>
+                <textarea 
+                    id="promptText" 
+                    placeholder="例: @田中さん の意見を参考にして、チームリーダー が提案した内容についてまとめてください。"
+                    rows="4"
+                ></textarea>
+                <small class="help-text">
+                    登録されているDiscordニックネームを含むプロンプトを入力してください。
+                </small>
+            </div>
+            
+            <div class="demo-actions">
+                <button id="resolveBtn" class="btn btn-primary">ニックネーム解決</button>
+                <button id="enhanceBtn" class="btn btn-secondary">プロンプト強化</button>
+                <button id="clearBtn" class="btn btn-tertiary">クリア</button>
+            </div>
+        </div>
+
+        <!-- 結果セクション -->
+        <div class="demo-section">
+            <h3>解決結果</h3>
+            <div id="resultsContainer" class="results-container">
+                <div class="no-results">
+                    上記のボタンを押して結果を確認してください。
+                </div>
+            </div>
+        </div>
+
+        <!-- Discord設定表示 -->
+        <div class="demo-section">
+            <h3>登録済みDiscord設定</h3>
+            <div id="discordMappingsContainer" class="discord-mappings-container">
+                <div class="loading">読み込み中...</div>
+            </div>
+        </div>
+
+        <!-- 使用例 -->
+        <div class="demo-section">
+            <h3>使用例</h3>
+            <div class="examples-container">
+                <div class="example-item">
+                    <h4>入力例1:</h4>
+                    <code>@田中さん が昨日話していた件について詳しく教えて</code>
+                    <p>→ 「田中さん」がDiscord IDに解決されます</p>
+                </div>
+                
+                <div class="example-item">
+                    <h4>入力例2:</h4>
+                    <code>チームリーダー の提案とサブリーダー の意見を比較してください</code>
+                    <p>→ 複数のニックネームが同時に解決されます</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const promptText = document.getElementById('promptText');
+    const resolveBtn = document.getElementById('resolveBtn');
+    const enhanceBtn = document.getElementById('enhanceBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const discordMappingsContainer = document.getElementById('discordMappingsContainer');
+
+    // Discord設定を読み込み
+    loadDiscordMappings();
+
+    // イベントリスナー
+    resolveBtn.addEventListener('click', resolveNicknames);
+    enhanceBtn.addEventListener('click', enhancePrompt);
+    clearBtn.addEventListener('click', clearResults);
+
+    // Discord設定読み込み
+    async function loadDiscordMappings() {
+        try {
+            const response = await fetch('/api/user/discord');
+            const result = await response.json();
+            
+            if (result.success) {
+                displayDiscordMappings(result.data.discordMappings);
+            } else {
+                discordMappingsContainer.innerHTML = `
+                    <div class="error">Discord設定の読み込みに失敗しました: ${result.error}</div>
+                `;
+            }
+        } catch (error) {
+            discordMappingsContainer.innerHTML = `
+                <div class="error">エラー: ${error.message}</div>
+            `;
+        }
+    }
+
+    // Discord設定表示
+    function displayDiscordMappings(mappings) {
+        if (!mappings || mappings.length === 0) {
+            discordMappingsContainer.innerHTML = `
+                <div class="no-mappings">
+                    <p>Discord設定が登録されていません。</p>
+                    <a href="/profile/discord" class="btn btn-primary">Discord設定を追加</a>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div class="mappings-list">';
+        mappings.forEach((mapping, index) => {
+            html += `
+                <div class="mapping-item">
+                    <div class="mapping-nickname">${escapeHtml(mapping.nickname)}</div>
+                    <div class="mapping-discord-id">ID: ${escapeHtml(mapping.discordId)}</div>
+                    ${mapping.description ? `<div class="mapping-description">${escapeHtml(mapping.description)}</div>` : ''}
+                </div>
+            `;
+        });
+        html += '</div>';
+        html += `<a href="/profile/discord" class="manage-link">設定を管理 →</a>`;
+        
+        discordMappingsContainer.innerHTML = html;
+    }
+
+    // ニックネーム解決
+    async function resolveNicknames() {
+        const text = promptText.value.trim();
+        if (!text) {
+            alert('プロンプトを入力してください。');
+            return;
+        }
+
+        try {
+            resolveBtn.disabled = true;
+            resolveBtn.textContent = '解決中...';
+
+            const response = await fetch('/api/user/discord/resolve', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: text })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                displayResolveResults(result.data);
+            } else {
+                displayError(result.error);
+            }
+        } catch (error) {
+            displayError(error.message);
+        } finally {
+            resolveBtn.disabled = false;
+            resolveBtn.textContent = 'ニックネーム解決';
+        }
+    }
+
+    // プロンプト強化
+    async function enhancePrompt() {
+        const prompt = promptText.value.trim();
+        if (!prompt) {
+            alert('プロンプトを入力してください。');
+            return;
+        }
+
+        try {
+            enhanceBtn.disabled = true;
+            enhanceBtn.textContent = '強化中...';
+
+            const response = await fetch('/api/user/discord/enhance-prompt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ prompt: prompt })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                displayEnhanceResults(result.data);
+            } else {
+                displayError(result.error);
+            }
+        } catch (error) {
+            displayError(error.message);
+        } finally {
+            enhanceBtn.disabled = false;
+            enhanceBtn.textContent = 'プロンプト強化';
+        }
+    }
+
+    // 解決結果表示
+    function displayResolveResults(data) {
+        let html = '<div class="results-content">';
+        html += '<h4>ニックネーム解決結果</h4>';
+        
+        html += '<div class="result-section">';
+        html += '<h5>元のテキスト:</h5>';
+        html += `<div class="text-display original">${escapeHtml(data.originalText)}</div>`;
+        html += '</div>';
+        
+        html += '<div class="result-section">';
+        html += '<h5>解決されたテキスト:</h5>';
+        html += `<div class="text-display resolved">${escapeHtml(data.resolvedText)}</div>`;
+        html += '</div>';
+        
+        if (data.foundMappings && data.foundMappings.length > 0) {
+            html += '<div class="result-section">';
+            html += '<h5>発見されたマッピング:</h5>';
+            html += '<div class="mappings-found">';
+            data.foundMappings.forEach(mapping => {
+                html += `
+                    <div class="found-mapping">
+                        <span class="nickname">${escapeHtml(mapping.nickname)}</span>
+                        <span class="arrow">→</span>
+                        <span class="discord-id">${escapeHtml(mapping.discordId)}</span>
+                        ${mapping.description ? `<span class="description">(${escapeHtml(mapping.description)})</span>` : ''}
+                    </div>
+                `;
+            });
+            html += '</div>';
+            html += '</div>';
+        } else {
+            html += '<div class="result-section">';
+            html += '<p class="no-mappings-found">Discordニックネームは見つかりませんでした。</p>';
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        resultsContainer.innerHTML = html;
+    }
+
+    // 強化結果表示
+    function displayEnhanceResults(data) {
+        let html = '<div class="results-content">';
+        html += '<h4>プロンプト強化結果</h4>';
+        
+        html += '<div class="result-section">';
+        html += '<h5>元のプロンプト:</h5>';
+        html += `<div class="text-display original">${escapeHtml(data.originalPrompt)}</div>`;
+        html += '</div>';
+        
+        html += '<div class="result-section">';
+        html += '<h5>強化されたプロンプト:</h5>';
+        html += `<div class="text-display enhanced">${escapeHtml(data.enhancedPrompt)}</div>`;
+        html += '</div>';
+        
+        if (data.discordContext) {
+            html += '<div class="result-section">';
+            html += '<h5>追加されたDiscordコンテキスト:</h5>';
+            html += `<div class="text-display context">${escapeHtml(data.discordContext)}</div>`;
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        resultsContainer.innerHTML = html;
+    }
+
+    // エラー表示
+    function displayError(error) {
+        resultsContainer.innerHTML = `
+            <div class="error-result">
+                <h4>エラーが発生しました</h4>
+                <p>${escapeHtml(error)}</p>
+            </div>
+        `;
+    }
+
+    // 結果クリア
+    function clearResults() {
+        promptText.value = '';
+        resultsContainer.innerHTML = '<div class="no-results">上記のボタンを押して結果を確認してください。</div>';
+    }
+
+    // HTML エスケープ
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+});
+</script>
+
+<style>
+.demo-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.demo-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.demo-description {
+    color: #666;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+}
+
+.demo-section {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.demo-section h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: #2c3e50;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 0.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    resize: vertical;
+}
+
+.help-text {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.demo-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-tertiary {
+    background: #ecf0f1;
+    color: #2c3e50;
+    border: 1px solid #bdc3c7;
+}
+
+.btn-tertiary:hover {
+    background: #d5dbdb;
+}
+
+.results-container {
+    min-height: 100px;
+}
+
+.no-results {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 2rem;
+}
+
+.results-content {
+    padding: 1rem;
+}
+
+.result-section {
+    margin-bottom: 2rem;
+}
+
+.result-section h5 {
+    margin-bottom: 0.8rem;
+    color: #2c3e50;
+}
+
+.text-display {
+    padding: 1rem;
+    border-radius: 6px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.text-display.original {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.text-display.resolved {
+    background: #e8f5e8;
+    border: 1px solid #c3e6cb;
+}
+
+.text-display.enhanced {
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+}
+
+.text-display.context {
+    background: #fff3e0;
+    border: 1px solid #ffcc02;
+}
+
+.mappings-found {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.found-mapping {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.nickname {
+    font-weight: 600;
+    color: #3498db;
+}
+
+.arrow {
+    color: #666;
+}
+
+.discord-id {
+    font-family: monospace;
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.description {
+    color: #666;
+    font-style: italic;
+}
+
+.discord-mappings-container .loading {
+    text-align: center;
+    color: #666;
+    padding: 2rem;
+}
+
+.no-mappings {
+    text-align: center;
+    padding: 2rem;
+}
+
+.mappings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.mapping-item {
+    padding: 1rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+}
+
+.mapping-nickname {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+}
+
+.mapping-discord-id {
+    font-family: monospace;
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.mapping-description {
+    color: #888;
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.manage-link {
+    display: inline-block;
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+    margin-top: 1rem;
+}
+
+.manage-link:hover {
+    text-decoration: underline;
+}
+
+.examples-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.example-item {
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-left: 4px solid #3498db;
+    border-radius: 0 6px 6px 0;
+}
+
+.example-item h4 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.example-item code {
+    display: block;
+    background: white;
+    padding: 0.75rem;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+    margin: 0.5rem 0;
+    font-family: monospace;
+}
+
+.example-item p {
+    margin-bottom: 0;
+    color: #666;
+    font-style: italic;
+}
+
+.error-result {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    padding: 1.5rem;
+    color: #721c24;
+}
+
+.error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    padding: 1rem;
+    color: #721c24;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .demo-container {
+        padding: 1rem;
+    }
+    
+    .demo-section {
+        padding: 1.5rem;
+    }
+    
+    .demo-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+}
+</style>
+
+<%- include('partials/footer') %>

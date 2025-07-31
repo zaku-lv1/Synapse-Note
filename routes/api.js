@@ -17,6 +17,7 @@ const express = require('express');
 const router = express.Router();
 const admin = require('firebase-admin');
 const GoogleAppsScriptService = require('../services/googleAppsScriptService');
+const DiscordService = require('../services/discordService');
 
 // Firestore データベースインスタンス (lazy initialization)
 function getDb() {
@@ -30,6 +31,9 @@ function getDb() {
 
 // Google Apps Script service instance
 const gasService = new GoogleAppsScriptService();
+
+// Discord service instance
+const discordService = new DiscordService();
 
 // --- ミドルウェア ---
 
@@ -503,7 +507,11 @@ router.get('/docs', (req, res) => {
                 'GET /api/user/profile': '現在のユーザーのプロフィール情報を取得',
                 'GET /api/user/quizzes': '現在のユーザーが作成したクイズ一覧を取得',
                 'GET /api/user/history': '現在のユーザーのクイズ実行履歴を取得',
-                'GET /api/user/stats': '現在のユーザーの統計情報を取得'
+                'GET /api/user/stats': '現在のユーザーの統計情報を取得',
+                'GET /api/user/discord': '現在のユーザーのDiscord設定を取得',
+                'POST /api/user/discord/resolve': 'テキスト内のニックネームをDiscord IDに解決',
+                'POST /api/user/discord/enhance-prompt': 'プロンプトにDiscordコンテキストを追加',
+                'GET /api/user/discord/nickname/:nickname': '指定されたニックネームのDiscord設定を取得'
             }
         },
         response_format: {
@@ -539,6 +547,105 @@ router.get('/openapi.json', (req, res) => {
             error: 'Failed to load OpenAPI specification',
             timestamp: new Date().toISOString()
         });
+    }
+});
+
+// --- Discord API Endpoints ---
+
+// Discord設定を取得
+router.get('/user/discord', requireAuth, requireDatabase, async (req, res) => {
+    try {
+        const userId = req.session.user.uid;
+        const mappings = await discordService.getUserDiscordMappings(userId);
+        
+        res.json({
+            success: true,
+            data: {
+                discordMappings: mappings,
+                count: mappings.length
+            },
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        handleApiError(res, error, 'Failed to get Discord mappings');
+    }
+});
+
+// プロンプト内のニックネーム解決
+router.post('/user/discord/resolve', requireAuth, requireDatabase, async (req, res) => {
+    try {
+        const userId = req.session.user.uid;
+        const { text } = req.body;
+        
+        if (!text || typeof text !== 'string') {
+            return res.status(400).json({
+                success: false,
+                error: 'Text is required and must be a string',
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        const resolution = await discordService.resolveNicknamesInText(text, userId);
+        
+        res.json({
+            success: true,
+            data: resolution,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        handleApiError(res, error, 'Failed to resolve nicknames in text');
+    }
+});
+
+// プロンプト強化（Discord コンテキスト付き）
+router.post('/user/discord/enhance-prompt', requireAuth, requireDatabase, async (req, res) => {
+    try {
+        const userId = req.session.user.uid;
+        const { prompt } = req.body;
+        
+        if (!prompt || typeof prompt !== 'string') {
+            return res.status(400).json({
+                success: false,
+                error: 'Prompt is required and must be a string',
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        const enhancement = await discordService.enhancePromptWithDiscordContext(prompt, userId);
+        
+        res.json({
+            success: true,
+            data: enhancement,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        handleApiError(res, error, 'Failed to enhance prompt with Discord context');
+    }
+});
+
+// 特定のニックネームでDiscord設定を検索
+router.get('/user/discord/nickname/:nickname', requireAuth, requireDatabase, async (req, res) => {
+    try {
+        const userId = req.session.user.uid;
+        const { nickname } = req.params;
+        
+        const mapping = await discordService.getDiscordMappingByNickname(nickname, userId);
+        
+        if (!mapping) {
+            return res.status(404).json({
+                success: false,
+                error: 'Discord mapping not found for the specified nickname',
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        res.json({
+            success: true,
+            data: mapping,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        handleApiError(res, error, 'Failed to get Discord mapping by nickname');
     }
 });
 

@@ -197,4 +197,20 @@ router.get('/api-docs', (req, res) => {
     });
 });
 
+/**
+ * Discord Demo Page
+ * 
+ * Discordニックネーム解決機能のデモページです：
+ * - プロンプト内のニックネーム解決のテスト
+ * - Discord設定の表示
+ * - 使用例の提供
+ * - 認証が必要
+ */
+router.get('/discord-demo', requireLogin, (req, res) => {
+    res.render('discord-demo', { 
+        title: 'Discord ニックネーム解決デモ - Synapse Note',
+        user: req.session?.user || null 
+    });
+});
+
 module.exports = router;
