@@ -324,7 +324,7 @@ router.get('/admin-demo-users', (req, res) => {
     const mockUsers = [
         { id: 'user1', username: '田中太郎', handle: '@tanaka', createdAt: { seconds: 1705123456 }, isAdmin: false },
         { id: 'user2', username: '佐藤花子', handle: '@hanako_sato', createdAt: { seconds: 1705109876 }, isAdmin: false },
-        { id: 'user3', username: '山田次郎', handle: '@yamada_jiro', createdAt: { seconds: 1705098765 }, isAdmin: true },
+        { id: 'test-uid', username: 'テストユーザー', handle: '@test_user', createdAt: { seconds: 1705098765 }, isAdmin: true },
         { id: 'user4', username: '鈴木一郎スーパーロングユーザーネーム', handle: '@suzuki_ichiro_super_long_handle_name', createdAt: { seconds: 1704987654 }, isAdmin: false },
         { id: 'user5', username: '高橋美咲', handle: '@misaki_takahashi', createdAt: { seconds: 1704876543 }, isAdmin: false }
     ];

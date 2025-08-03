@@ -257,55 +257,7 @@ router.post('/settings', requireAdmin, async (req, res) => {
     }
 });
 
-// ユーザーを管理者に昇格
-router.post('/users/:userId/promote', requireAdmin, async (req, res) => {
-    try {
-        const db = getDb();
-        if (!db) {
-            return res.redirect('/admin/users?error=データベースに接続できません。');
-        }
 
-        const userId = req.params.userId;
-        await db.collection('users').doc(userId).update({
-            isAdmin: true,
-            promotedAt: new Date(),
-            promotedBy: req.session.user.uid
-        });
-
-        res.redirect('/admin/users?message=ユーザーを管理者に昇格させました。');
-    } catch (error) {
-        console.error("User promotion error:", error);
-        res.redirect('/admin/users?error=ユーザーの昇格中にエラーが発生しました。');
-    }
-});
-
-// ユーザーの管理者権限を取り消し
-router.post('/users/:userId/demote', requireAdmin, async (req, res) => {
-    try {
-        const db = getDb();
-        if (!db) {
-            return res.redirect('/admin/users?error=データベースに接続できません。');
-        }
-
-        const userId = req.params.userId;
-        
-        // 自分自身の権限は取り消せない
-        if (userId === req.session.user.uid) {
-            return res.redirect('/admin/users?error=自分自身の管理者権限は取り消せません。');
-        }
-
-        await db.collection('users').doc(userId).update({
-            isAdmin: false,
-            demotedAt: new Date(),
-            demotedBy: req.session.user.uid
-        });
-
-        res.redirect('/admin/users?message=ユーザーの管理者権限を取り消しました。');
-    } catch (error) {
-        console.error("User demotion error:", error);
-        res.redirect('/admin/users?error=権限の取り消し中にエラーが発生しました。');
-    }
-});
 
 // クイズ削除
 router.post('/quizzes/:quizId/delete', requireAdmin, async (req, res) => {

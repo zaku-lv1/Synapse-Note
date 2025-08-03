@@ -59,23 +59,9 @@
                             </span>
                         </td>
                         <td class="action-buttons">
-                            <% if (!userItem.isAdmin) { %>
-                            <form method="POST" action="/admin/users/<%= userItem.id %>/promote" 
-                                  onsubmit="return confirm('このユーザーを管理者に昇格させますか？')" 
-                                  style="display: inline;">
-                                <button type="submit" class="btn btn-promote">管理者に昇格</button>
-                            </form>
-                            <% } else if (userItem.id !== user.uid) { %>
-                            <form method="POST" action="/admin/users/<%= userItem.id %>/demote" 
-                                  onsubmit="return confirm('このユーザーの管理者権限を取り消しますか？')" 
-                                  style="display: inline;">
-                                <button type="submit" class="btn btn-demote">権限取り消し</button>
-                            </form>
-                            <% } else { %>
+                            <% if (userItem.id === user.uid) { %>
                             <span class="current-user">あなた</span>
-                            <% } %>
-                            
-                            <% if (userItem.id !== user.uid) { %>
+                            <% } else { %>
                             <form method="POST" action="/admin/users/<%= userItem.id %>/delete" 
                                   onsubmit="return confirm('⚠️ 警告: ユーザー「<%= userItem.username %>」とそのすべてのデータ（作成したクイズ、試行履歴など）を完全に削除します。\n\nこの操作は取り消すことができません。\n\n本当に削除しますか？')" 
                                   style="display: inline;">
@@ -115,30 +101,12 @@
                 </div>
 
                 <div class="user-card-actions">
-                    <% if (!userItem.isAdmin) { %>
-                    <form method="POST" action="/admin/users/<%= userItem.id %>/promote" 
-                          onsubmit="return confirm('このユーザーを管理者に昇格させますか？')">
-                        <button type="submit" class="btn btn-promote mobile-btn">
-                            <span class="btn-icon">⬆️</span>
-                            <span class="btn-text">管理者に昇格</span>
-                        </button>
-                    </form>
-                    <% } else if (userItem.id !== user.uid) { %>
-                    <form method="POST" action="/admin/users/<%= userItem.id %>/demote" 
-                          onsubmit="return confirm('このユーザーの管理者権限を取り消しますか？')">
-                        <button type="submit" class="btn btn-demote mobile-btn">
-                            <span class="btn-icon">⬇️</span>
-                            <span class="btn-text">権限取り消し</span>
-                        </button>
-                    </form>
-                    <% } else { %>
+                    <% if (userItem.id === user.uid) { %>
                     <div class="current-user-indicator">
                         <span class="btn-icon">👤</span>
                         <span class="btn-text">あなた</span>
                     </div>
-                    <% } %>
-                    
-                    <% if (userItem.id !== user.uid) { %>
+                    <% } else { %>
                     <form method="POST" action="/admin/users/<%= userItem.id %>/delete" 
                           onsubmit="return confirm('⚠️ 警告: ユーザー「<%= userItem.username %>」とそのすべてのデータ（作成したクイズ、試行履歴など）を完全に削除します。\n\nこの操作は取り消すことができません。\n\n本当に削除しますか？')">
                         <button type="submit" class="btn btn-delete mobile-btn">
@@ -293,23 +261,6 @@
     transition: background-color 0.2s;
 }
 
-.btn-promote {
-    background: #28a745;
-    color: white;
-}
-
-.btn-promote:hover {
-    background: #218838;
-}
-
-.btn-demote {
-    background: #dc3545;
-    color: white;
-}
-
-.btn-demote:hover {
-    background: #c82333;
-}
 
 .btn-delete {
     background: #dc3545;
@@ -502,25 +453,7 @@
         font-size: 1.1em;
     }
     
-    /* Button color overrides for mobile */
-    .mobile-btn.btn-promote {
-        background: #28a745;
-        color: white;
-    }
-    
-    .mobile-btn.btn-promote:hover {
-        background: #218838;
-    }
-    
-    .mobile-btn.btn-demote {
-        background: #dc3545;
-        color: white;
-    }
-    
-    .mobile-btn.btn-demote:hover {
-        background: #c82333;
-    }
-    
+
     .mobile-btn.btn-delete {
         background: #dc3545;
         color: white;
