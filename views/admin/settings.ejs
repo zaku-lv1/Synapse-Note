@@ -91,7 +91,18 @@
 
             <!-- 保存ボタン -->
             <div class="setting-actions">
-                <button type="submit" class="btn btn-primary">設定を保存</button>
+                <button type="submit" class="btn btn-primary" id="saveButton">
+                    <span class="button-text">設定を保存</span>
+                    <span class="button-loading" style="display: none;">
+                        <svg class="loading-spinner" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="31.416" stroke-dashoffset="31.416">
+                                <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                                <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                            </circle>
+                        </svg>
+                        保存中...
+                    </span>
+                </button>
                 <a href="/admin" class="btn btn-secondary">キャンセル</a>
             </div>
         </form>
@@ -350,6 +361,28 @@ textarea:focus {
     background: #e0a800;
 }
 
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.button-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.loading-spinner {
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 .current-status {
     background: #f8f9fa;
     border-radius: 12px;
@@ -436,5 +469,60 @@ textarea:focus {
     line-height: 1.5;
 }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.settings-form');
+    const saveButton = document.getElementById('saveButton');
+    const buttonText = saveButton.querySelector('.button-text');
+    const buttonLoading = saveButton.querySelector('.button-loading');
+    
+    if (form && saveButton) {
+        form.addEventListener('submit', function(e) {
+            // Prevent double submission
+            if (saveButton.disabled) {
+                e.preventDefault();
+                return;
+            }
+            
+            // Show loading state immediately
+            saveButton.disabled = true;
+            buttonText.style.display = 'none';
+            buttonLoading.style.display = 'flex';
+            
+            // Add visual feedback class
+            saveButton.classList.add('loading');
+            
+            // Ensure minimum loading state visibility (500ms) for better UX
+            setTimeout(function() {
+                // This ensures the loading state is visible for at least 500ms
+                // even on very fast connections
+            }, 500);
+        });
+        
+        // Handle form submit errors (if any) to reset button state
+        window.addEventListener('beforeunload', function() {
+            // Reset button state on page unload
+            resetButtonState();
+        });
+        
+        function resetButtonState() {
+            if (saveButton) {
+                saveButton.disabled = false;
+                buttonText.style.display = 'inline';
+                buttonLoading.style.display = 'none';
+                saveButton.classList.remove('loading');
+            }
+        }
+        
+        // Reset button state if form submission fails or returns immediately
+        setTimeout(function() {
+            if (saveButton.disabled) {
+                resetButtonState();
+            }
+        }, 5000); // Reset after 5 seconds as a fallback
+    }
+});
+</script>
 
 <%- include('../partials/footer') %>
