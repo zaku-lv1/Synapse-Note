@@ -6,6 +6,8 @@
 class LoadingManager {
     constructor() {
         this.overlay = null;
+        this.timeoutId = null;
+        this.isShowing = false;
         this.init();
     }
 
@@ -13,6 +15,14 @@ class LoadingManager {
      * Initialize loading overlay
      */
     init() {
+        // Remove any existing loading overlays to prevent duplicates
+        const existingOverlays = document.querySelectorAll('.loading-overlay');
+        existingOverlays.forEach(overlay => {
+            if (overlay.id !== 'loading-overlay') {
+                overlay.remove();
+            }
+        });
+        
         // Create loading overlay if it doesn't exist
         if (!document.getElementById('loading-overlay')) {
             this.createOverlay();
@@ -44,9 +54,16 @@ class LoadingManager {
      * Show loading overlay with custom text
      * @param {string} text - Main loading text
      * @param {string} subtext - Additional loading text
+     * @param {number} timeout - Optional timeout in milliseconds (default: 30000)
      */
-    show(text = '処理中...', subtext = 'しばらくお待ちください') {
+    show(text = '処理中...', subtext = 'しばらくお待ちください', timeout = 30000) {
         if (!this.overlay) this.init();
+        
+        // Clear any existing timeout
+        if (this.timeoutId) {
+            clearTimeout(this.timeoutId);
+            this.timeoutId = null;
+        }
         
         const loadingText = document.getElementById('loading-text');
         const loadingSubtext = document.getElementById('loading-subtext');
@@ -55,18 +72,35 @@ class LoadingManager {
         if (loadingSubtext) loadingSubtext.textContent = subtext;
         
         this.overlay.classList.add('active');
+        this.isShowing = true;
         
         // Prevent body scroll
         document.body.style.overflow = 'hidden';
+        
+        // Set timeout to automatically hide loading after specified time
+        if (timeout > 0) {
+            this.timeoutId = setTimeout(() => {
+                console.warn('Loading timeout reached, automatically hiding overlay');
+                this.hide();
+            }, timeout);
+        }
     }
 
     /**
      * Hide loading overlay
      */
     hide() {
+        // Clear timeout if exists
+        if (this.timeoutId) {
+            clearTimeout(this.timeoutId);
+            this.timeoutId = null;
+        }
+        
         if (this.overlay) {
             this.overlay.classList.remove('active');
         }
+        
+        this.isShowing = false;
         
         // Restore body scroll
         document.body.style.overflow = '';
@@ -83,6 +117,57 @@ class LoadingManager {
         
         if (loadingText) loadingText.textContent = text;
         if (loadingSubtext) loadingSubtext.textContent = subtext;
+    }
+
+    /**
+     * Force hide loading overlay and clean up all states
+     * Use this as an emergency cleanup function
+     */
+    forceHide() {
+        // Clear any timeouts
+        if (this.timeoutId) {
+            clearTimeout(this.timeoutId);
+            this.timeoutId = null;
+        }
+        
+        // Remove all loading overlays from the page
+        const allOverlays = document.querySelectorAll('.loading-overlay');
+        allOverlays.forEach(overlay => {
+            overlay.classList.remove('active');
+            overlay.style.display = 'none';
+        });
+        
+        // Reset all loading states
+        this.isShowing = false;
+        
+        // Restore body scroll
+        document.body.style.overflow = '';
+        
+        // Clean up any loading buttons
+        const loadingButtons = document.querySelectorAll('.btn.loading');
+        loadingButtons.forEach(btn => {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+        });
+        
+        // Clean up any loading forms
+        const loadingForms = document.querySelectorAll('.form-container.loading');
+        loadingForms.forEach(form => {
+            form.classList.remove('loading');
+            if (form._loadingCleanup) {
+                form._loadingCleanup();
+            }
+        });
+        
+        console.log('Force hide completed - all loading states cleared');
+    }
+
+    /**
+     * Check if loading is currently active
+     * @returns {boolean}
+     */
+    isActive() {
+        return this.isShowing;
     }
 }
 
@@ -210,6 +295,28 @@ function submitFormWithLoading(form, loadingType = 'default') {
 
     // Add form loading class
     form.classList.add('loading');
+    
+    // Set up error recovery - hide loading if form submission fails
+    const hideLoadingOnError = () => {
+        loadingManager.hide();
+        if (submitButton) {
+            submitButton.classList.remove('loading');
+            submitButton.disabled = false;
+        }
+        form.classList.remove('loading');
+    };
+    
+    // Add a backup timeout to prevent infinite loading
+    const backupTimeout = setTimeout(() => {
+        console.warn('Form submission timeout reached, hiding loading overlay');
+        hideLoadingOnError();
+    }, 60000); // 60 seconds backup timeout
+    
+    // Store cleanup function for potential use
+    form._loadingCleanup = () => {
+        clearTimeout(backupTimeout);
+        hideLoadingOnError();
+    };
 }
 
 /**
@@ -279,15 +386,57 @@ function initializeAdminLoading() {
 }
 
 /**
+ * Emergency loading cleanup - accessible globally
+ */
+function emergencyLoadingCleanup() {
+    console.warn('Emergency loading cleanup triggered');
+    if (window.loadingManager) {
+        window.loadingManager.forceHide();
+    }
+    
+    // Additional cleanup for any rogue loading elements
+    document.querySelectorAll('.loading-overlay').forEach(el => {
+        el.remove();
+    });
+    
+    // Restore body scroll as final measure
+    document.body.style.overflow = '';
+}
+
+/**
  * Handle page errors and hide loading if necessary
  */
 function handlePageErrors() {
-    window.addEventListener('error', function() {
+    // Hide loading on any JavaScript errors
+    window.addEventListener('error', function(event) {
+        console.error('Page error detected, hiding loading overlay:', event.error);
         loadingManager.hide();
     });
 
-    window.addEventListener('unload', function() {
+    // Hide loading on unhandled promise rejections
+    window.addEventListener('unhandledrejection', function(event) {
+        console.error('Unhandled promise rejection detected, hiding loading overlay:', event.reason);
         loadingManager.hide();
+    });
+
+    // Hide loading when page is about to unload
+    window.addEventListener('beforeunload', function() {
+        loadingManager.hide();
+    });
+    
+    // Hide loading when page becomes hidden (tab switch, minimize)
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden && loadingManager.isShowing) {
+            console.warn('Page became hidden while loading was active, hiding overlay');
+            loadingManager.hide();
+        }
+    });
+    
+    // Emergency keyboard shortcut: Ctrl+Shift+X to force hide loading
+    document.addEventListener('keydown', function(event) {
+        if (event.ctrlKey && event.shiftKey && event.key === 'X') {
+            emergencyLoadingCleanup();
+        }
     });
 }
 
@@ -303,3 +452,4 @@ window.LoadingManager = LoadingManager;
 window.QuizLoading = QuizLoading;
 window.AdminLoading = AdminLoading;
 window.loadingManager = loadingManager;
+window.emergencyLoadingCleanup = emergencyLoadingCleanup;
