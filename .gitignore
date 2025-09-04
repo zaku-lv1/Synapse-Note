@@ -4,6 +4,9 @@
 /config/synapse-note-837bf-2442a02e69ce.json
 /package-lock.json
 
+# Demo files (for testing only)
+/public/demo-grading.html
+
 # Vercel
 .vercel
 

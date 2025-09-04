@@ -186,6 +186,11 @@ const QuizLoading = {
             'クイズを採点中...',
             'AIが解答を分析しています。しばらくお待ちください。'
         );
+        
+        // Add grading-specific styling
+        if (loadingManager.overlay) {
+            loadingManager.overlay.classList.add('grading-mode');
+        }
     },
 
     /**
@@ -223,6 +228,11 @@ const QuizLoading = {
      */
     hide() {
         loadingManager.hide();
+        
+        // Remove grading-specific styling
+        if (loadingManager.overlay) {
+            loadingManager.overlay.classList.remove('grading-mode');
+        }
     }
 };
 
