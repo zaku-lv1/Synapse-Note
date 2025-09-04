@@ -474,53 +474,90 @@ textarea:focus {
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('.settings-form');
     const saveButton = document.getElementById('saveButton');
+    
+    if (!form || !saveButton) {
+        console.error('Form or save button not found');
+        return;
+    }
+    
     const buttonText = saveButton.querySelector('.button-text');
     const buttonLoading = saveButton.querySelector('.button-loading');
     
-    if (form && saveButton) {
-        form.addEventListener('submit', function(e) {
-            // Prevent double submission
-            if (saveButton.disabled) {
-                e.preventDefault();
-                return;
-            }
-            
-            // Show loading state immediately
+    if (!buttonText || !buttonLoading) {
+        console.error('Button text or loading elements not found');
+        return;
+    }
+    
+    let isSubmitting = false;
+    
+    function resetButtonState() {
+        if (saveButton) {
+            isSubmitting = false;
+            saveButton.disabled = false;
+            buttonText.style.display = 'inline';
+            buttonLoading.style.display = 'none';
+            saveButton.classList.remove('loading');
+        }
+    }
+    
+    function setLoadingState() {
+        if (saveButton) {
+            isSubmitting = true;
             saveButton.disabled = true;
             buttonText.style.display = 'none';
             buttonLoading.style.display = 'flex';
-            
-            // Add visual feedback class
             saveButton.classList.add('loading');
-            
-            // Ensure minimum loading state visibility (500ms) for better UX
-            setTimeout(function() {
-                // This ensures the loading state is visible for at least 500ms
-                // even on very fast connections
-            }, 500);
-        });
-        
-        // Handle form submit errors (if any) to reset button state
-        window.addEventListener('beforeunload', function() {
-            // Reset button state on page unload
-            resetButtonState();
-        });
-        
-        function resetButtonState() {
-            if (saveButton) {
-                saveButton.disabled = false;
-                buttonText.style.display = 'inline';
-                buttonLoading.style.display = 'none';
-                saveButton.classList.remove('loading');
-            }
+        }
+    }
+    
+    // Handle form submission
+    form.addEventListener('submit', function(e) {
+        // Prevent double submission
+        if (isSubmitting || saveButton.disabled) {
+            e.preventDefault();
+            return false;
         }
         
-        // Reset button state if form submission fails or returns immediately
+        // Show loading state immediately
+        setLoadingState();
+        
+        // Reset button after reasonable timeout as safety measure
         setTimeout(function() {
-            if (saveButton.disabled) {
+            if (isSubmitting) {
+                console.warn('Form submission taking longer than expected, resetting button state');
                 resetButtonState();
             }
-        }, 5000); // Reset after 5 seconds as a fallback
+        }, 10000); // 10 seconds timeout
+    });
+    
+    // Handle form errors (if form submission fails and we stay on the same page)
+    window.addEventListener('pageshow', function() {
+        // Reset button state when page is shown (including back/forward navigation)
+        if (isSubmitting) {
+            resetButtonState();
+        }
+    });
+    
+    // Handle visibility change (tab switching, etc.)
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible' && isSubmitting) {
+            // Reset if we come back to a tab that's stuck in loading state
+            setTimeout(function() {
+                if (isSubmitting) {
+                    resetButtonState();
+                }
+            }, 1000);
+        }
+    });
+    
+    // Handle page unload
+    window.addEventListener('beforeunload', function() {
+        resetButtonState();
+    });
+    
+    // Initial state check (in case button is already in wrong state)
+    if (saveButton.disabled && !buttonLoading.style.display) {
+        resetButtonState();
     }
 });
 </script>
