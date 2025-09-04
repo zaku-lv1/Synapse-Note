@@ -1,7 +1,7 @@
 <%- include('partials/header') %>
 
-<div class="form-container">
-    <form action="/quiz/submit" method="POST">
+<div class="form-container quiz-taking">
+    <form action="/quiz/submit" method="POST" id="quiz-form">
         <h2 class="page-title"><%= quiz.title %></h2>
                 <% if (locals.error) { %>
             <div class="error-message"><%= error %></div>
@@ -48,9 +48,39 @@
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="button">採点する</button>
+            <button type="submit" class="button" id="submit-quiz-btn">
+                <span class="btn-text">採点する</span>
+                <span class="btn-icon">📝</span>
+            </button>
         </div>
     </form>
 </div>
+
+<!-- Loading overlay for quiz grading -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quizForm = document.getElementById('quiz-form');
+    const submitBtn = document.getElementById('submit-quiz-btn');
+    
+    if (quizForm && submitBtn) {
+        quizForm.addEventListener('submit', function(e) {
+            // Show grading loading screen
+            if (window.QuizLoading) {
+                window.QuizLoading.showGrading();
+            }
+            
+            // Add loading state to button
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            
+            // Update button text
+            const btnText = submitBtn.querySelector('.btn-text');
+            if (btnText) {
+                btnText.textContent = '採点中...';
+            }
+        });
+    }
+});
+</script>
 
 <%- include('partials/footer') %>

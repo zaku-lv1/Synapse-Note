@@ -1,7 +1,10 @@
 <%- include('partials/header') %>
 
-<div class="result-container">
-    <div class="result-summary">
+<div class="result-container grading-container">
+    <div class="result-summary <%= 
+        maxScore > 0 && totalScore / maxScore >= 0.8 ? 'excellent' : 
+        maxScore > 0 && totalScore / maxScore >= 0.5 ? 'good' : 'needs-improvement'
+    %>">
         <h2 class="page-title">採点結果</h2>
         <h3 class="quiz-title-result"><%= quiz.title %></h3>
         <div class="score-display">
@@ -10,15 +13,15 @@
             <span class="score-max"><%= maxScore %></span>
             <span class="score-label">点</span>
         </div>
-        <p class="result-message">
+        <div class="result-message">
             <% if (maxScore > 0 && totalScore / maxScore >= 0.8) { %>
-                素晴らしい成績です！よく頑張りました！
+                🎉 素晴らしい成績です！よく頑張りました！
             <% } else if (maxScore > 0 && totalScore / maxScore >= 0.5) { %>
-                お疲れ様でした。よくできています！
+                👏 お疲れ様でした。よくできています！
             <% } else { %>
-                お疲れ様でした。間違えた問題を復習しましょう。
+                📚 お疲れ様でした。間違えた問題を復習しましょう。
             <% } %>
-        </p>
+        </div>
     </div>
 
     <div class="results-list">
